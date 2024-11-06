@@ -1,0 +1,97 @@
+{
+    "responses": {
+        "query_01": [],
+        "query_02": [
+            "obj52",
+            "obj75"
+        ],
+        "query_03": [
+            "obj53"
+        ],
+        "query_04": [
+            "obj2"
+        ],
+        "query_05": [
+            "obj93"
+        ],
+        "query_06": [],
+        "query_07": [
+            "obj46"
+        ],
+        "query_08": [
+            "obj37",
+            "obj43"
+        ],
+        "query_09": [],
+        "query_10": [],
+        "query_11": [
+            "obj43",
+            "obj37"
+        ],
+        "query_12": [
+            "obj43",
+            "obj37"
+        ],
+        "query_13": [],
+        "query_14": [
+            "obj46"
+        ],
+        "query_15": [
+            "obj37",
+            "obj43"
+        ],
+        "query_16": [
+            "obj37"
+        ],
+        "query_17": [
+            "obj1"
+        ],
+        "query_18": [
+            "obj2"
+        ],
+        "query_19": [
+            "obj92"
+        ],
+        "query_20": [],
+        "query_21": [
+            "obj27",
+            "obj2"
+        ],
+        "query_22": [
+            "obj43",
+            "obj53",
+            "obj48",
+            "obj35"
+        ],
+        "query_23": [
+            "obj27",
+            "obj46",
+            "obj53"
+        ],
+        "query_24": [
+            "obj52"
+        ],
+        "query_25": [
+            "obj2",
+            "obj48",
+            "obj43"
+        ],
+        "query_26": [],
+        "query_27": [
+            "obj52",
+            "obj75"
+        ],
+        "query_28": [
+            "obj53",
+            "obj52",
+            "obj75"
+        ],
+        "query_29": [
+            "obj53"
+        ],
+        "query_30": [
+            "obj46",
+            "obj92"
+        ]
+    }
+}

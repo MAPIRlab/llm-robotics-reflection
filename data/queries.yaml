@@ -1,0 +1,45 @@
+queries:
+  # descriptive
+  # easy
+  query_01: "I'm searching for a bike in the room"
+  query_02: "Where is the bag?"
+  query_03: "Is there a refrigerator?"
+  query_04: "I'm searching the bed"
+  query_05: "I need to go to the toilet"
+  
+  # hard
+  query_06: "I need the book that is on a table"
+  query_07: "Is there a kitchen sink?"
+  query_08: "A chair close to a table"
+  query_09: "Is there a microwave that is close to an oven?"
+  query_10: "A couch that is in front of the TV"
+
+  # affordance
+  # easy
+  query_11: "What can I use to hold my coffee while I sit?"
+  query_12: "I need to write notes during a meeting"
+  query_13: "I need something to block sunlight from entering the room"
+  query_14: "Where can I leave the dirty dishes?"
+  query_15: "Where can I sit down and work on my laptop?"
+
+  # hard
+  query_16: "Where can I sit and observe the entire view of the room without obstruction?"
+  query_17: "What could display the current weather forecast?"
+  query_18: "I want to drop a delicate object, away from foot traffic"
+  query_19: "I want to perform my oral hygiene routine"
+  query_20: "I would like to go out for some exercise"
+
+  # negation
+  # easy
+  query_21: "Is there anything to sit on, other than a chair?"
+  query_22: "I need something hard, other than a bag"
+  query_23: "Tell me something durable other than a bed"
+  query_24: "Tell me something I can open that is not a refrigerator"
+  query_25: "Is there something immovable, other than a refrigerator?"
+
+  # hard
+  query_26: "Something that changes over time and is not a clock."
+  query_27: "Is there something foldable, other than a laptop?"
+  query_28: "Something I can put things in, other than a backpack."
+  query_29: "Something that is not at room temperature"
+  query_30: "Something where I can pour liquids, that doesn't close?"

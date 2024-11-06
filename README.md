@@ -1,2 +1,5 @@
 # mdpi-reflection
-Code for the paper "Agentic Workflows for Improving LLM Reasoning in Robotic Object-Centered Planning" presented in MDPI Robotics Journal
+Code repository for the work "Enhancing LLMs with Agentic Workflows. Application to Robotic Task-Oriented Navigation"
+
+# Installation
+Use the virtual environment located in ``
