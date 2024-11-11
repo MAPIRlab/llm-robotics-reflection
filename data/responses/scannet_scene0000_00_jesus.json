@@ -1,103 +1,35 @@
 {
     "responses": {
-        "query_01": [
-            "obj67"
-        ],
-        "query_02": [
-            "obj71",
-            "obj47"
-        ],
-        "query_03": [
-            "obj62",
-            "obj57"
-        ],
-        "query_04": [
-            "obj18",
-            "obj114"
-        ],
-        "query_05": [
-            "obj57",
-            "obj117"
-        ],
-        "query_06": [
-            "obj102",
-            "obj105"
-        ],
-        "query_07": [
-            "obj55"
-        ],
-        "query_08": [
-            "obj64"
-        ],
-        "query_09": [
-            "obj131"
-        ],
-        "query_10": [],
-        "query_11": [
-            "obj138"
-        ],
-        "query_12": [
-            "obj138"
-        ],
-        "query_13": [],
-        "query_14": [
-            "obj55"
-        ],
-        "query_15": [
-            "obj64",
-            "obj138"
-        ],
-        "query_16": [
-            "obj142"
-        ],
-        "query_17": [
-            "obj16",
-            "obj10"
-        ],
-        "query_18": [
-            "obj138"
-        ],
-        "query_19": [
-            "obj49",
-            "obj55"
-        ],
-        "query_20": [
-            "obj67"
-        ],
-        "query_21": [
-            "obj67",
-            "obj18"
-        ],
-        "query_22": [
-            "obj138",
-            "obj1"
-        ],
-        "query_23": [
-            "obj138",
-            "obj67",
-            "obj62"
-        ],
-        "query_24": [
-            "obj131",
-            "obj102"
-        ],
-        "query_25": [
-            "obj57",
-            "obj55"
-        ],
-        "query_26": [],
-        "query_27": [
-            "obj71"
-        ],
-        "query_28": [
-            "obj131"
-        ],
-        "query_29": [
-            "obj62"
-        ],
-        "query_30": [
-            "obj55",
-            "obj127"
-        ]
+       "query_01": ["obj67"],
+       "query_02": ["obj71", "obj18", "obj47"],
+       "query_03": ["obj57", "obj62"],
+       "query_04": ["obj18", "obj67", "obj93"],
+       "query_05": ["obj57", "obj117", "obj62"],
+       "query_06": ["obj10", "obj102", "obj105"],
+       "query_07": ["obj55"],
+       "query_08": ["obj64", "obj1", "obj142"],
+       "query_09": ["obj131"],
+       "query_10": ["obj67"],
+       "query_11": ["obj55", "obj138", "obj10"],
+       "query_12": ["obj138", "obj10", "obj1"],
+       "query_13": ["obj67"],
+       "query_14": ["obj55", "obj127"],
+       "query_15": ["obj18", "obj67", "obj101", "obj1", "obj64", "obj142"],
+       "query_16": ["obj1"],
+       "query_17": ["obj16", "obj10", "obj131"],
+       "query_18": ["obj18"],
+       "query_19": ["obj57", "obj117"],
+       "query_20": ["obj1", "obj93"],
+       "query_21": ["obj18", "obj67", "obj101", "obj93"],
+       "query_22": ["obj18", "obj67"],
+       "query_23": ["obj18"],
+       "query_24": ["obj131", "obj102", "obj105", "obj80", "obj82"],
+       "query_25": ["obj131", "obj18"],
+       "query_26": ["obj16", "obj10"],
+       "query_27": ["obj138", "obj10"],
+       "query_28": ["obj1", "obj93", "obj47"],
+       "query_29": ["obj131"],
+       "query_30": ["obj55", "obj127"]
     }
-}
+ }
+ 
