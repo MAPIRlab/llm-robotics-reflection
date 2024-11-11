@@ -11,7 +11,7 @@ class GoogleGeminiProvider(LargeLanguageModel):
 
     GEMINI_1_0_PRO = "gemini-1.0-pro"
     GEMINI_1_0_PRO_VISION = "gemini-1.0-pro-vision"
-    GEMINI_1_5_PRO = "gemini-1.5-pro-preview-0409"
+    GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     def __init__(self, credentials_file: str, project_id: str, project_location: str, model_name: str):
         """
@@ -46,7 +46,6 @@ class GoogleGeminiProvider(LargeLanguageModel):
                                 system_instruction=system_instruction)
 
         # Get response
-        print(contents)
         response = model.generate_content(contents)
         response_text = response.candidates[0].content.parts[0].text
 

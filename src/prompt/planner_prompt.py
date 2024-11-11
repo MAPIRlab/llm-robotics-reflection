@@ -14,12 +14,14 @@ The input to the model is a 3D semantic map in a JSON format (<SEMANTIC_MAP>). E
 2 "n_observations": Number of observations of the object in the scene
 3 "results": Results of the classification of the object, indicating a category and the certainty that the object belongs to that category
 
-Read and parse the JSON in order to answer users questions about the scene, indicating the most related object to perform the task.
-For each user question, respond with a JSON dictionary with the following fields:
+Read and parse the JSON in order to answer users queries about the scene, indicating the most related object to perform the task.
+To answer the user's queries, you must not only take into account the classification of each object, but also the arrangement of these objects in the semantic map.
+Although the relationships do not come in the semantic map the scene layout can be useful to see which objects are next to, above or below others.
+For each user query, respond with a JSON dictionary with the following fields:
 
 1 "inferred_query": (String) Your interpretation of the user query in summary form
-2 "query_achievable": (Boolean) Whether or not the user specified query is achievable using the objects and descriptions provided in the semantic map
-3 "relevant_objects": (List) List of objects relevant to the user's query (ordered by relevance, most relevance first); or empty list in case there is no relevant object
+2 "query_achievable": (Boolean) Whether or not the user-specified query is achievable using the objects and descriptions provided in the semantic map
+3 "relevant_objects": (List of String) List of objects relevant to the user's query (ordered by relevance, most relevance first); or empty list in case there is no relevant object. Objects must be represented here by their ids.
 4 "explanation": (String) A brief explanation of what the most relevant objects are, and how they achieve the user-specified task
 </INSTRUCTION>
 
