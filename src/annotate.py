@@ -2,6 +2,7 @@ import json
 import os
 import re
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, ttk
 
 import yaml
@@ -19,6 +20,7 @@ class GUI(tk.Tk):
         self.semantic_map_loaded = False
         self.queries_loaded = False
         self.responses_file_path = None
+        self.queries_file_path = None
 
         self.title("Semantic Map and Human Data Interface")
         self.geometry("1200x800")
@@ -37,6 +39,9 @@ class GUI(tk.Tk):
         self.semantic_map_label = tk.Label(
             left_frame, text="No semantic map file loaded", font=("Arial", 10, "italic"))
         self.semantic_map_label.pack(pady=5)
+        self.inspect_scene_button = tk.Button(
+            left_frame, text="Inspect scene!", command=self.inspect_scene, state=tk.DISABLED)
+        self.inspect_scene_button.pack(pady=5)
 
         self.semantic_map_tree = ttk.Treeview(
             left_frame,
@@ -133,6 +138,17 @@ class GUI(tk.Tk):
                 self.semantic_map_loaded = True
                 self.semantic_map_label.config(
                     text=f"Loaded file: {os.path.basename(file_path)}")
+
+                # Check if file basename starts with 'scannet_' and activate button if so
+                basename = os.path.basename(file_path)
+                if basename.startswith("scannet_"):
+                    scene_id = basename.replace(
+                        "scannet_", "").rsplit(".", 1)[0]
+                    self.inspect_scene_button.config(
+                        state=tk.NORMAL, command=lambda: self.inspect_scene(scene_id))
+                else:
+                    self.inspect_scene_button.config(state=tk.DISABLED)
+
             except (json.JSONDecodeError, ValueError) as e:
                 messagebox.showerror(
                     "Error", f"Invalid semantic map format! Error: {e}")
@@ -156,8 +172,12 @@ class GUI(tk.Tk):
                 self.clear_treeview(self.human_data_tree)
                 for query_id, query_text in queries.items():
                     self.human_data_tree.insert(
-                        "", "end", values=(query_id, query_text, ""))
+                        "", "end", values=(query_id, query_text, "")
+                    )
+
                 self.queries_loaded = True
+                self.queries_file_path = file_path  # Store the queries file path
+
             except (yaml.YAMLError, ValueError) as e:
                 messagebox.showerror(
                     "Error", f"Invalid queries file format! Error: {e}")
@@ -165,6 +185,8 @@ class GUI(tk.Tk):
     def on_double_click(self, event):
         item_id = self.human_data_tree.focus()
         column = self.human_data_tree.identify_column(event.x)
+
+        # Check if double-click occurred on the "Response" column
         if column == '#3':
             bbox = self.human_data_tree.bbox(item_id, column)
             if bbox:
@@ -176,6 +198,24 @@ class GUI(tk.Tk):
                 self.current_entry_widget.bind(
                     "<Return>",
                     lambda e: self.save_response(
+                        item_id, self.current_entry_widget.get())
+                )
+                self.current_entry_widget.place(
+                    x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+                self.current_entry_widget.focus()
+
+        # Check if double-click occurred on the "Query" column
+        elif column == '#2':
+            bbox = self.human_data_tree.bbox(item_id, column)
+            if bbox:
+                current_value = self.human_data_tree.item(item_id, 'values')[1]
+                if hasattr(self, 'current_entry_widget'):
+                    self.current_entry_widget.destroy()
+                self.current_entry_widget = tk.Entry(self.human_data_tree)
+                self.current_entry_widget.insert(0, current_value)
+                self.current_entry_widget.bind(
+                    "<Return>",
+                    lambda e: self.save_query(
                         item_id, self.current_entry_widget.get())
                 )
                 self.current_entry_widget.place(
@@ -202,33 +242,53 @@ class GUI(tk.Tk):
             self.current_entry_widget.destroy()
         self.highlight_semantic_map_objects(None)
 
-        if not self.responses_file_path:
-            file_path = filedialog.asksaveasfilename(
-                title="Save Responses File",
-                defaultextension=".json",
-                filetypes=[("JSON files", "*.json")]
-            )
-            if file_path:
-                self.responses_file_path = file_path
-                self.responses_label.config(
-                    text=f"Loaded file: {os.path.basename(file_path)}")
-            else:
-                messagebox.showwarning(
-                    "Warning", "Response not saved. No file selected.")
-                return
+        # Autosave the updated responses
         self.auto_save_responses()
 
+    def save_query(self, item_id, new_value):
+        # Update the "Query" column value in the table
+        values = self.human_data_tree.item(item_id, "values")
+        self.human_data_tree.item(item_id, values=(
+            values[0], new_value, values[2]))
+
+        # Destroy the Entry widget after saving
+        if hasattr(self, 'current_entry_widget'):
+            self.current_entry_widget.destroy()
+
+        # Autosave the updated queries
+        self.auto_save_queries()
+
     def auto_save_responses(self):
-        responses_data = {"responses": {}}
-        for row in self.human_data_tree.get_children():
-            query_id, _, response_str = self.human_data_tree.item(
-                row, "values")
-            response_list = [item.strip()
-                             for item in response_str.split(',') if item.strip()]
-            responses_data["responses"][query_id] = response_list
-        with open(self.responses_file_path, 'w') as file:
-            json.dump(responses_data, file, indent=4)
-        print(f"Auto-saved responses to {self.responses_file_path}")
+        if self.responses_file_path:
+            responses_data = {"responses": {}}
+            for row in self.human_data_tree.get_children():
+                query_id, _, response_str = self.human_data_tree.item(
+                    row, "values")
+                response_list = [item.strip()
+                                 for item in response_str.split(',') if item.strip()]
+                responses_data["responses"][query_id] = response_list
+
+            with open(self.responses_file_path, 'w') as file:
+                json.dump(responses_data, file, indent=4)
+            print(f"Auto-saved responses to {self.responses_file_path}")
+        else:
+            messagebox.showwarning(
+                "Warning", "No responses file loaded. Changes will not be saved.")
+
+    def auto_save_queries(self):
+        if self.queries_file_path:
+            queries_data = {"queries": {}}
+            for row in self.human_data_tree.get_children():
+                query_id, query_text, _ = self.human_data_tree.item(
+                    row, "values")
+                queries_data["queries"][query_id] = query_text
+
+            with open(self.queries_file_path, 'w') as file:
+                yaml.dump(queries_data, file)
+            print(f"Auto-saved queries to {self.queries_file_path}")
+        else:
+            messagebox.showwarning(
+                "Warning", "No queries file loaded. Changes will not be saved.")
 
     def load_responses_file(self):
         if not self.queries_loaded:
@@ -284,6 +344,11 @@ class GUI(tk.Tk):
             self.semantic_map_tree.item(row, tags=())
         messagebox.showinfo(
             "Clear", "All queries and responses have been cleared.")
+
+    def inspect_scene(self, scene_id):
+        url = f"https://kaldir.vc.in.tum.de/scannet_browse/scans/simple-viewer?palette=d3_unknown_category19p&modelId=scannetv2.{
+            scene_id}"
+        webbrowser.open(url)
 
 
 if __name__ == "__main__":

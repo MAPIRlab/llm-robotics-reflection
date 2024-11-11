@@ -23,14 +23,25 @@ def plan_base(mode: str, semantic_map: list[tuple], queries: list):
     semantic_map_basename = semantic_map[0]
     semantic_map_object = semantic_map[1]
 
-    for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO, constants.CHAT_GPT_3_5_TURBO,
-                         constants.CHAT_GPT_4_O):
+    for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO):
 
-        for query_idx, query in tqdm.tqdm(enumerate(queries),
-                                          desc=f"Planning BASE_LLM {semantic_map_basename} {llm_provider.get_provider_name()}..."):
+        for query_id, query_text in tqdm.tqdm(queries,
+                                              desc=f"Planning {constants.METHOD_BASE} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
+
+            # Skip if exists
+            output_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                            mode,
+                                            constants.METHOD_BASE,
+                                            llm_provider.get_provider_name(),
+                                            semantic_map_basename,
+                                            query_id,
+                                            "final_plan.json")
+            if os.path.exists(output_file_path):
+                print(f"Skipping {output_file_path}...")
+                continue
 
             conversation_history = ConversationHistory()
-            print(f"{len(conversation_history.conversation_history_list)}")
+            # print(f"{len(conversation_history.conversation_history_list)}")
 
             # Append system prompt
             planner_prompt = PlannerPrompt(
@@ -39,21 +50,12 @@ def plan_base(mode: str, semantic_map: list[tuple], queries: list):
                 planner_prompt.get_prompt_text())
 
             # Append user prompt
-            conversation_history.append_user_message(query)
+            conversation_history.append_user_message(query_text)
 
             # Get response
             response = llm_provider.generate_json(conversation_history)
-            # print("QUERY", query)
-            # print("RESPONSE", response)
 
             # Save response
-            output_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                            mode,
-                                            constants.METHOD_BASE,
-                                            llm_provider.get_provider_name(),
-                                            semantic_map_basename,
-                                            str(query_idx),
-                                            "final_plan.json")
             file_utils.create_directories_for_file(output_file_path)
             file_utils.save_json_str_to_file(json_str=response,
                                              output_path=output_file_path)
@@ -330,8 +332,8 @@ def main(args):
     # Load queries
     queries = list()
     queries_dict = file_utils.load_yaml(constants.QUERIES_FILE_PATH)
-    for query in queries_dict["queries"]:
-        queries.append(query)
+    for query_id in queries_dict["queries"]:
+        queries.append((query_id, queries_dict["queries"][query_id]))
 
     # MAIN LOOP
     for (s_m_b, s_m_o) in semantic_maps:
