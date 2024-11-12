@@ -1,11 +1,5 @@
 
 
-import os
-
-import constants
-from utils import file_utils
-
-
 def reduce_float_precision(data: dict, precision: int = 2) -> dict:
     """
     Reduces the precision of float numbers in the given dictionary to the specified number of decimal places.
@@ -28,7 +22,7 @@ def reduce_float_precision(data: dict, precision: int = 2) -> dict:
     return data
 
 
-def reduce_class_uncertainty(data: dict) -> dict:
+def reduce_unknown_objects(data: dict) -> dict:
     """
     Reduces uncertainty in class instances by filtering out those with a maximum classification result of "unknown".
 
@@ -57,24 +51,29 @@ def reduce_class_uncertainty(data: dict) -> dict:
     """
     new_data = dict()
     new_data["instances"] = dict()
-
     for object_key, object_value in data["instances"].items():
-
         max_result_key = None
         max_result_value = None
-
         # Get (max_result_key, max_result_value)
         for result_key, result_value in object_value["results"].items():
-
             if max_result_key is None or max_result_value < result_value:
                 max_result_key = result_key
                 max_result_value = result_value
-
         # Include object if max result was not unknown
         if max_result_key != "unknown":
             new_data["instances"][object_key] = object_value
-
     return new_data
+
+
+def reduce_class_uncertainty(data: dict):
+    for _, obj_data in data.get("instances", {}).items():
+        if "results" in obj_data:
+            # Find the key with the maximum value in the results dictionary
+            max_label = max(obj_data["results"], key=obj_data["results"].get)
+            max_value = obj_data["results"][max_label]
+            # Update the results dictionary to retain only the max result
+            obj_data["results"] = {max_label: max_value}
+    return data
 
 
 def preprocess_semantic_map(semantic_map: dict, class_uncertainty: bool = True):
@@ -82,6 +81,7 @@ def preprocess_semantic_map(semantic_map: dict, class_uncertainty: bool = True):
     TODO: documentation
     """
     semantic_map = reduce_float_precision(semantic_map, 2)
+    semantic_map = reduce_unknown_objects(semantic_map)
     if not class_uncertainty:
         semantic_map = reduce_class_uncertainty(semantic_map)
     return semantic_map
