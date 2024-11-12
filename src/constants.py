@@ -18,7 +18,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Paths
 SEMANTIC_MAPS_FOLDER_PATH = "data/semantic_maps/"
 DATA_FOLDER_PATH = "data/"
-RESPONSES_FOLDER_PATH = "data/responses"
+GROUND_TRUTH_FOLDER_PATH = "data/responses"
 
 QUERIES_FILE_PATH = "data/queries.yaml"
 

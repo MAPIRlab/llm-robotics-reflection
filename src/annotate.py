@@ -19,7 +19,7 @@ class GUI(tk.Tk):
         # Initialization
         self.semantic_map_loaded = False
         self.queries_loaded = False
-        self.responses_file_path = None
+        self.ground_truth_file_path = None
         self.queries_file_path = None
 
         self.title("Semantic Map and Human Data Interface")
@@ -62,11 +62,11 @@ class GUI(tk.Tk):
             "Arial", 12, "bold")).pack(pady=10)
         tk.Button(right_frame, text="Load query YAML file",
                   command=self.load_query_file).pack(pady=5)
-        tk.Button(right_frame, text="Load responses JSON file",
-                  command=self.load_responses_file).pack(pady=5)
-        self.responses_label = tk.Label(
-            right_frame, text="No responses file loaded", font=("Arial", 10, "italic"))
-        self.responses_label.pack(pady=5)
+        tk.Button(right_frame, text="Load ground truth JSON file",
+                  command=self.load_ground_truth_file).pack(pady=5)
+        self.ground_truth_label = tk.Label(
+            right_frame, text="No ground truth file loaded", font=("Arial", 10, "italic"))
+        self.ground_truth_label.pack(pady=5)
 
         self.human_data_tree = ttk.Treeview(
             right_frame,
@@ -81,7 +81,7 @@ class GUI(tk.Tk):
         self.human_data_tree.bind(
             "<<TreeviewSelect>>", self.highlight_semantic_map_objects)
         self.human_data_tree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-        tk.Button(right_frame, text="Clear", command=self.clear_queries_and_responses,
+        tk.Button(right_frame, text="Clear", command=self.clear_queries_and_ground_truth,
                   bg="red", fg="white").pack(pady=5)
 
     def clear_treeview(self, treeview):
@@ -94,7 +94,7 @@ class GUI(tk.Tk):
             initialdir=constants.SEMANTIC_MAPS_FOLDER_PATH
         )
         if file_path:
-            self.clear_queries_and_responses()
+            self.clear_queries_and_ground_truth()
             try:
                 with open(file_path, 'r') as file:
                     semantic_map_obj = json.load(file)
@@ -242,8 +242,8 @@ class GUI(tk.Tk):
             self.current_entry_widget.destroy()
         self.highlight_semantic_map_objects(None)
 
-        # Autosave the updated responses
-        self.auto_save_responses()
+        # Autosave the updated ground truth
+        self.auto_save_ground_truth()
 
     def save_query(self, item_id, new_value):
         # Update the "Query" column value in the table
@@ -256,24 +256,25 @@ class GUI(tk.Tk):
             self.current_entry_widget.destroy()
 
         # Autosave the updated queries
+        self.human_data_tree.focus()
         self.auto_save_queries()
 
-    def auto_save_responses(self):
-        if self.responses_file_path:
-            responses_data = {"responses": {}}
+    def auto_save_ground_truth(self):
+        if self.ground_truth_file_path:
+            ground_truth_data = {"responses": {}}
             for row in self.human_data_tree.get_children():
                 query_id, _, response_str = self.human_data_tree.item(
                     row, "values")
                 response_list = [item.strip()
                                  for item in response_str.split(',') if item.strip()]
-                responses_data["responses"][query_id] = response_list
+                ground_truth_data["responses"][query_id] = response_list
 
-            with open(self.responses_file_path, 'w') as file:
-                json.dump(responses_data, file, indent=4)
-            print(f"Auto-saved responses to {self.responses_file_path}")
+            with open(self.ground_truth_file_path, 'w') as file:
+                json.dump(ground_truth_data, file, indent=4)
+            print(f"Auto-saved ground truth to {self.ground_truth_file_path}")
         else:
             messagebox.showwarning(
-                "Warning", "No responses file loaded. Changes will not be saved.")
+                "Warning", "No ground truth file loaded. Changes will not be saved.")
 
     def auto_save_queries(self):
         if self.queries_file_path:
@@ -290,35 +291,36 @@ class GUI(tk.Tk):
             messagebox.showwarning(
                 "Warning", "No queries file loaded. Changes will not be saved.")
 
-    def load_responses_file(self):
+    def load_ground_truth_file(self):
         if not self.queries_loaded:
             messagebox.showerror("Error", "Load a queries file first!")
             return
         file_path = filedialog.askopenfilename(
-            title="Select a responses JSON file",
+            title="Select a ground truth JSON file",
             filetypes=[("JSON files", "*.json")],
-            initialdir=constants.RESPONSES_FOLDER_PATH
+            initialdir=constants.GROUND_TRUTH_FOLDER_PATH
         )
         if file_path:
             try:
                 with open(file_path, 'r') as file:
                     data = json.load(file)
-                responses = data.get("responses", {})
-                if not isinstance(responses, dict):
+                ground_truth = data.get("responses", {})
+                if not isinstance(ground_truth, dict):
                     raise ValueError("Invalid 'responses' structure.")
 
-                self.responses_file_path = file_path
+                self.ground_truth_file_path = file_path
                 for row in self.human_data_tree.get_children():
                     query_id = self.human_data_tree.item(row, "values")[0]
-                    response_objects = ", ".join(responses.get(query_id, []))
+                    response_objects = ", ".join(
+                        ground_truth.get(query_id, []))
                     values = self.human_data_tree.item(row, "values")
                     self.human_data_tree.item(row, values=(
                         values[0], values[1], response_objects))
-                self.responses_label.config(
+                self.ground_truth_label.config(
                     text=f"Loaded file: {os.path.basename(file_path)}")
             except (json.JSONDecodeError, ValueError) as e:
                 messagebox.showerror(
-                    "Error", f"Invalid responses file format! Error: {e}")
+                    "Error", f"Invalid ground truth file format! Error: {e}")
 
     def highlight_semantic_map_objects(self, event):
         self.semantic_map_tree.tag_configure("highlight", background="yellow")
@@ -335,15 +337,15 @@ class GUI(tk.Tk):
                 if object_id in response_list:
                     self.semantic_map_tree.item(row, tags=("highlight",))
 
-    def clear_queries_and_responses(self):
+    def clear_queries_and_ground_truth(self):
         self.clear_treeview(self.human_data_tree)
         self.queries_loaded = False
-        self.responses_file_path = None
-        self.responses_label.config(text="No responses file loaded")
+        self.ground_truth_file_path = None
+        self.ground_truth_label.config(text="No ground truth file loaded")
         for row in self.semantic_map_tree.get_children():
             self.semantic_map_tree.item(row, tags=())
         messagebox.showinfo(
-            "Clear", "All queries and responses have been cleared.")
+            "Clear", "All queries and ground truth have been cleared.")
 
     def inspect_scene(self, scene_id):
         url = f"https://kaldir.vc.in.tum.de/scannet_browse/scans/simple-viewer?palette=d3_unknown_category19p&modelId=scannetv2.{
