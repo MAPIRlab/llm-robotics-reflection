@@ -9,7 +9,7 @@ import constants
 from llm.conversation_history import ConversationHistory
 from prompt.chooser_prompt import ChooserPrompt
 from prompt.correction_prompt import CorrectionSystemPrompt, CorrectionUserPrompt
-from prompt.planner_prompt import PlannerPrompt
+from prompt.planner_prompt import PromptPlan
 from prompt.self_reflection_prompt import (
     SelfReflectionSystemPrompt,
     SelfReflectionUserPrompt,
@@ -44,7 +44,7 @@ def plan_base(mode: str, semantic_map: list[tuple], queries: list):
             # print(f"{len(conversation_history.conversation_history_list)}")
 
             # Append system prompt
-            planner_prompt = PlannerPrompt(
+            planner_prompt = PromptPlan(
                 semantic_map=text_utils.dict_to_json_str(semantic_map_object))
             conversation_history.append_system_message(
                 planner_prompt.get_prompt_text())
@@ -79,7 +79,7 @@ def plan_self_reflection(mode: str, semantic_map: list, queries: list):
             conversation_history.clear()
             # Append system prompt
             conversation_history.append_system_message(
-                PlannerPrompt(
+                PromptPlan(
                     semantic_map=semantic_map_object_str).get_prompt_text())
             # Append user prompt
             conversation_history.append_user_message(
@@ -164,7 +164,7 @@ def plan_multiagent_reflection(mode: str, semantic_map: list, queries: list):
         planner_conversation_history = ConversationHistory()
         # Append system prompt
         planner_conversation_history.append_system_message(
-            PlannerPrompt(
+            PromptPlan(
             ).get_prompt_text())
 
         # Self reflector
@@ -272,7 +272,7 @@ def plan_ensembling(mode: str, semantic_map, queries: list):
             planner_conversation_history.clear()
             # Append system prompt
             planner_conversation_history.append_system_message(
-                PlannerPrompt(
+                PromptPlan(
                     semantic_map=semantic_map_object_str).get_prompt_text())
             # Append user prompt
             planner_conversation_history.append_user_message(

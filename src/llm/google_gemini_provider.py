@@ -47,6 +47,7 @@ class GoogleGeminiProvider(LargeLanguageModel):
 
         # Get response
         response = model.generate_content(contents)
+
         response_text = response.candidates[0].content.parts[0].text
 
         return response_text

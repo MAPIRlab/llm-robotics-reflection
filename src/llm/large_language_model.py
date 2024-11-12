@@ -87,6 +87,7 @@ class LargeLanguageModel(ABC):
         """
         attempt = 1
         while attempt <= self.JSON_MAX_ATTEMPTS:
+            response = ""
             try:
                 response = self.generate_text(conversation_history)
                 # print(response)
@@ -95,10 +96,9 @@ class LargeLanguageModel(ABC):
                 response = self._clean_response(response)
                 # Try to parse response
                 json.loads(response)
-
                 return response  # Return the valid JSON response
 
-            except json.decoder.JSONDecodeError as e:
+            except (json.decoder.JSONDecodeError, IndexError) as e:
                 self.logger.info(f"Error generating JSON on attempt {
                     attempt}: {str(e)}")
                 self.logger.info("WARNING: wrong response: " + response)
