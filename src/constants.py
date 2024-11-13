@@ -8,7 +8,6 @@ from llm.openai_gpt_provider import OpenAiGptProvider
 load_dotenv()
 
 # Credentials
-
 GOOGLE_GEMINI_CREDENTIALS_FILENAME = "credentials/capable-alcove-439311-g6-0ec434da875e.json"
 GOOGLE_GEMINI_PROJECT_ID = "capable-alcove-439311-g6"
 GOOGLE_GEMINI_PROJECT_LOCATION = "us-central1"
@@ -32,6 +31,8 @@ METHOD_BASE = "base"
 METHOD_SELF_REFLECTION = "self_reflection"
 METHOD_MULTIAGENT_REFLECTION = "multiagent_reflection"
 METHOD_ENSEMBLING = "llm_ensembling"
+
+SELF_REFLECTION_ITERATIONS = 2
 
 # LLM models
 GEMINI_1_0_PRO = GoogleGeminiProvider(credentials_file=GOOGLE_GEMINI_CREDENTIALS_FILENAME,

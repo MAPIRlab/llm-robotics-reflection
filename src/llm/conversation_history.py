@@ -80,7 +80,7 @@ class ConversationHistory:
         formatted_messages = []
         for message in self.conversation_history_list:
             formatted_messages.append(f"{message[KEY_ROLE].capitalize()}: {
-                                      message[KEY_CONTENT][:20].replace("\n", "").replace("\t", "")}...")
+                                      message[KEY_CONTENT].replace("\n", "").replace("\t", "")}...")
         return "\n".join(formatted_messages)
 
     def append_system_message(self, system_text: str):
@@ -140,8 +140,12 @@ class ConversationHistory:
                 - list: A list of formatted Content objects for the Gemini API.
         """
         # Get system instruction
-        system_instruction = search_dict_by_key_value(
-            self.conversation_history_list, KEY_ROLE, ROLE_SYSTEM)[KEY_CONTENT]
+        system_message = search_dict_by_key_value(
+            self.conversation_history_list, KEY_ROLE, ROLE_SYSTEM)
+        if system_message is not None:
+            system_instruction = [KEY_CONTENT]
+        else:
+            system_instruction = None
 
         # Get conversation history
         gemini_contents = list()
