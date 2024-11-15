@@ -30,9 +30,10 @@ MODE_UNCERTAINTY = "uncertainty"
 METHOD_BASE = "base"
 METHOD_SELF_REFLECTION = "self_reflection"
 METHOD_MULTIAGENT_REFLECTION = "multiagent_reflection"
-METHOD_ENSEMBLING = "llm_ensembling"
+METHOD_ENSEMBLING = "ensembling"
 
-SELF_REFLECTION_ITERATIONS = 2
+LLM_GEMINI_1_0_PRO = "g10p"
+LLM_GEMINI_1_5_PRO = "g15p"
 
 # LLM models
 GEMINI_1_0_PRO = GoogleGeminiProvider(credentials_file=GOOGLE_GEMINI_CREDENTIALS_FILENAME,
@@ -53,5 +54,4 @@ CHAT_GPT_4_O = OpenAiGptProvider(openai_api_key=OPENAI_API_KEY,
                                  model_name=OpenAiGptProvider.GPT_4_O,
                                  max_output_tokens=4096)
 
-LLM_PROVIDERS = [GEMINI_1_0_PRO, GEMINI_1_5_PRO,
-                 CHAT_GPT_3_5_TURBO, CHAT_GPT_4_O]
+LLM_PROVIDERS = [GEMINI_1_0_PRO, GEMINI_1_5_PRO]

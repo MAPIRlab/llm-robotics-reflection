@@ -1,6 +1,5 @@
 
 import json
-import logging
 from abc import ABC, abstractmethod
 from typing import Tuple
 
@@ -10,8 +9,6 @@ from llm.conversation_history import ConversationHistory
 class LargeLanguageModel(ABC):
 
     JSON_MAX_ATTEMPTS = 10
-
-    logger = logging.getLogger(__name__)
 
     @abstractmethod
     def get_provider_name(self) -> str:
@@ -99,12 +96,12 @@ class LargeLanguageModel(ABC):
                 return response  # Return the valid JSON response
 
             except (json.decoder.JSONDecodeError, IndexError) as e:
-                self.logger.info(f"Error generating JSON on attempt {
+                print(f"Error generating JSON on attempt {
                     attempt}: {str(e)}")
-                self.logger.info("WARNING: wrong response: " + response)
+                print("WARNING: wrong response: " + response)
 
             attempt += 1  # Increment attempt counter
 
-        self.logger.info(
+        print(
             "Couldn't get a valid JSON response, max attempts exceeded")
         return "{}"

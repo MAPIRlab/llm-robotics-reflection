@@ -143,7 +143,7 @@ class ConversationHistory:
         system_message = search_dict_by_key_value(
             self.conversation_history_list, KEY_ROLE, ROLE_SYSTEM)
         if system_message is not None:
-            system_instruction = [KEY_CONTENT]
+            system_instruction = system_message[KEY_CONTENT]
         else:
             system_instruction = None
 
@@ -151,8 +151,8 @@ class ConversationHistory:
         gemini_contents = list()
         # Special case: only ONE MESSAGE -> SYSTEM MESSAGE
         if len(self.conversation_history_list) == 1 and self.conversation_history_list[0][KEY_ROLE] == ROLE_SYSTEM:
-            gemini_contents = Content(role=ROLE_USER,
-                                      parts=[Part.from_text(self.conversation_history_list[0][KEY_CONTENT])])
+            gemini_contents = [Content(role=ROLE_USER,
+                                       parts=[Part.from_text(self.conversation_history_list[0][KEY_CONTENT])])]
         else:
             for message in self.conversation_history_list:
                 role = message[KEY_ROLE]
@@ -164,5 +164,7 @@ class ConversationHistory:
                                              parts=[Part.from_text(content)])
 
                     gemini_contents.append(gemini_content)
+
+        # print(len(gemini_contents))
 
         return system_instruction, gemini_contents

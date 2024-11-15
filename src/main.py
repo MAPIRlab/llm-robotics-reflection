@@ -7,370 +7,453 @@ import tqdm
 
 import constants
 from llm.conversation_history import ConversationHistory
+from llm.large_language_model import LargeLanguageModel
 from prompt.chooser_prompt import ChooserPrompt
-from prompt.correction_prompt import PromptCorrect, PromptCorrectUser
-from prompt.planner_prompt import PromptPlan
-from prompt.self_reflection_prompt import PromptReflect, PromptReflectUser
+from prompt.correction_prompt import (
+    PromptCorrect,
+    PromptCorrectAgent,
+    PromptCorrectUser,
+)
+from prompt.planner_prompt import PromptPlan, PromptPlanAgent, PromptPlanUser
+from prompt.self_reflection_prompt import PromptReflectAgent, PromptReflectUser
 from utils import file_utils, text_utils
 from voxelad import preprocess
 
 
-def plan_base(mode: str, semantic_map: list[tuple], queries: list):
+def plan_base(mode: str, semantic_map: list[tuple], llm_provider: LargeLanguageModel, queries: list):
 
     semantic_map_basename = semantic_map[0]
     semantic_map_object = semantic_map[1]
 
-    for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO):
+    for query_id, query_text in tqdm.tqdm(queries,
+                                          desc=f"Ex. {mode} {constants.METHOD_BASE} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
 
-        for query_id, query_text in tqdm.tqdm(queries,
-                                              desc=f"Planning {constants.METHOD_BASE} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
+        # Skip if exists
+        output_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                        mode,
+                                        constants.METHOD_BASE,
+                                        llm_provider.get_provider_name(),
+                                        semantic_map_basename,
+                                        query_id,
+                                        "final_plan.json")
+        if os.path.exists(output_file_path):
+            print(f"Skipping {output_file_path}...")
+            continue
 
-            # Skip if exists
-            output_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                            mode,
-                                            constants.METHOD_BASE,
-                                            llm_provider.get_provider_name(),
-                                            semantic_map_basename,
-                                            query_id,
-                                            "final_plan.json")
-            if os.path.exists(output_file_path):
-                print(f"Skipping {output_file_path}...")
-                continue
+        conversation_history = ConversationHistory()
 
-            conversation_history = ConversationHistory()
+        # Append prompt (user)
+        prompt_plan = PromptPlan(
+            semantic_map=text_utils.dict_to_json_str(semantic_map_object),
+            query=query_text)
+        conversation_history.append_user_message(
+            prompt_plan.get_prompt_text())
 
-            # Append prompt (user)
-            prompt_plan = PromptPlan(
-                semantic_map=text_utils.dict_to_json_str(semantic_map_object),
-                query=query_text)
-            conversation_history.append_user_message(
-                prompt_plan.get_prompt_text())
+        # Get response
+        response = llm_provider.generate_json(conversation_history)
 
-            # Get response
-            response = llm_provider.generate_json(conversation_history)
-
-            # Save response
-            file_utils.create_directories_for_file(output_file_path)
-            file_utils.save_json_str_to_file(json_str=response,
-                                             output_path=output_file_path)
+        # Save response
+        file_utils.create_directories_for_file(output_file_path)
+        file_utils.save_json_str_to_file(json_str=response,
+                                         output_path=output_file_path)
 
 
-def plan_self_reflection(mode: str, semantic_map: list, queries: list):
-
-    semantic_map_basename = semantic_map[0]
-    semantic_map_object = semantic_map[1]
-    semantic_map_object_str = text_utils.dict_to_json_str(semantic_map_object)
-
-    for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO):
-
-        plan_conversation_history = ConversationHistory()
-        self_reflection_conversation_history = ConversationHistory()
-        correction_conversation_history = ConversationHistory()
-
-        for query_id, query_text in tqdm.tqdm(queries,
-                                              desc=f"Planning {constants.METHOD_SELF_REFLECTION} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
-
-            # New query -> empty conversation histories
-            plan_conversation_history.clear()
-            self_reflection_conversation_history.clear()
-            correction_conversation_history.clear()
-
-            ##########################################
-            ################## PLAN ##################
-            ##########################################
-            print("planning")
-            # Append prompt (user)
-            plan_conversation_history.append_user_message(
-                PromptPlan(
-                    semantic_map=semantic_map_object_str,
-                    query=query_text).get_prompt_text(),
-            )
-
-            # Skip if exists
-            plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                                   mode,
-                                                   constants.METHOD_SELF_REFLECTION,
-                                                   llm_provider.get_provider_name(),
-                                                   semantic_map_basename,
-                                                   query_id,
-                                                   "plan_0.json")
-            # Get response
-            if os.path.exists(plan_response_file_path):
-                print(f"Skipping {plan_response_file_path}...")
-                plan_response = text_utils.dict_to_json_str(
-                    file_utils.load_json(plan_response_file_path))
-            else:
-                plan_response = llm_provider.generate_json(
-                    plan_conversation_history)
-                file_utils.create_directories_for_file(plan_response_file_path)
-                file_utils.save_json_str_to_file(json_str=plan_response,
-                                                 output_path=plan_response_file_path)
-            # Append response to conversation history
-            plan_conversation_history.append_assistant_message(plan_response)
-
-            # Initial plan is response to be refined
-            response_to_be_refined = plan_response
-
-            # Set reflection and correction first prompts *user()
-            self_reflection_conversation_history.append_user_message(PromptReflect(
-                semantic_map=semantic_map_object_str).get_prompt_text())
-            correction_conversation_history.append_user_message(PromptCorrect(
-                semantic_map=semantic_map_object_str).get_prompt_text())
-
-            for reflection_iteration_idx in range(constants.SELF_REFLECTION_ITERATIONS):
-
-                ##########################################
-                ############## SELF-REFLECT ##############
-                ##########################################
-                print("reflecting")
-                # Append prompt (user)
-                self_reflection_conversation_history.append_user_message(
-                    PromptReflectUser(
-                        query=query_text,
-                        plan_response=response_to_be_refined).get_prompt_text(),
-                )
-
-                # Skip if exists
-                self_reflection_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                                                  mode,
-                                                                  constants.METHOD_SELF_REFLECTION,
-                                                                  llm_provider.get_provider_name(),
-                                                                  semantic_map_basename,
-                                                                  query_id,
-                                                                  f"self_reflection_{reflection_iteration_idx}.txt")
-                # Get response
-                if os.path.exists(self_reflection_response_file_path):
-                    print(f"Skipping {self_reflection_response_file_path}...")
-                    self_reflection_response = text_utils.dict_to_json_str(
-                        file_utils.read_text_from_file(self_reflection_response_file_path))
-                else:
-                    self_reflection_response = llm_provider.generate_text(
-                        self_reflection_conversation_history)
-                    file_utils.create_directories_for_file(
-                        self_reflection_response_file_path)
-                    file_utils.save_text_to_file(text=self_reflection_response,
-                                                 output_path=self_reflection_response_file_path)
-                # Append response to conversation history
-                self_reflection_conversation_history.append_assistant_message(
-                    self_reflection_response)
-
-                ##########################################
-                ################ CORRECT #################
-                ##########################################
-                print("correcting")
-                # Append prompt (user)
-                correction_conversation_history.append_user_message(
-                    PromptCorrectUser(
-                        plan_response=response_to_be_refined,
-                        self_reflection_response=self_reflection_response).get_prompt_text())
-
-                # Skip if exists
-                correction_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                                             mode,
-                                                             constants.METHOD_SELF_REFLECTION,
-                                                             llm_provider.get_provider_name(),
-                                                             semantic_map_basename,
-                                                             query_id,
-                                                             f"plan_{reflection_iteration_idx+1}.json")
-                # Get response
-                if os.path.exists(correction_response_file_path):
-                    print(f"Skipping {correction_response_file_path}...")
-                    correction_response = text_utils.dict_to_json_str(
-                        file_utils.load_json(correction_response_file_path))
-                else:
-                    correction_response = llm_provider.generate_json(
-                        correction_conversation_history)
-                    file_utils.create_directories_for_file(
-                        correction_response_file_path)
-                    file_utils.save_json_str_to_file(json_str=correction_response,
-                                                     output_path=correction_response_file_path)
-                # Append response to conversation history
-                correction_conversation_history.append_assistant_message(
-                    correction_response)
-
-                # New response to be refined
-                response_to_be_refined = correction_response
-
-            # Once reflection iterations finished, new set final plan
-            final_plan_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                                mode,
-                                                constants.METHOD_SELF_REFLECTION,
-                                                llm_provider.get_provider_name(),
-                                                semantic_map_basename,
-                                                query_id,
-                                                f"final_plan.json")
-            file_utils.create_directories_for_file(
-                final_plan_file_path)
-            file_utils.save_json_str_to_file(json_str=correction_response,
-                                             output_path=final_plan_file_path)
-
-
-def plan_multiagent_reflection(mode: str, semantic_map: list, queries: list):
+def plan_self_reflection(mode: str, semantic_map: list, llm_provider: LargeLanguageModel, queries: list, reflection_iterations: int):
 
     semantic_map_basename = semantic_map[0]
     semantic_map_object = semantic_map[1]
     semantic_map_object_str = text_utils.dict_to_json_str(semantic_map_object)
 
-    for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO, constants.CHAT_GPT_3_5_TURBO,
-                         constants.CHAT_GPT_4_O):
+    plan_conversation_history = ConversationHistory()
+    self_reflection_conversation_history = ConversationHistory()
+    correction_conversation_history = ConversationHistory()
 
-        # Planner
-        planner_conversation_history = ConversationHistory()
-        # Append system prompt
-        planner_conversation_history.append_system_message(
+    for query_id, query_text in tqdm.tqdm(queries,
+                                          desc=f"Ex. {mode} {constants.METHOD_SELF_REFLECTION} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
+
+        # New query -> empty conversation histories
+        plan_conversation_history.clear()
+        self_reflection_conversation_history.clear()
+        correction_conversation_history.clear()
+
+        ##########################################
+        ################## PLAN ##################
+        ##########################################
+        print("planning")
+        # Append prompt (user)
+        plan_conversation_history.append_user_message(
             PromptPlan(
-            ).get_prompt_text())
+                semantic_map=semantic_map_object_str,
+                query=query_text).get_prompt_text(),
+        )
 
-        # Self reflector
-        self_reflector_conversation_history = ConversationHistory()
-        # Append system prompt
-        self_reflector_conversation_history.append_system_message(
-            PromptReflect(semantic_map=semantic_map_object_str).get_prompt_text())
-
-        # Corrector
-        corrector_conversation_history = ConversationHistory()
-        # Append system prompt
-        corrector_conversation_history.append_system_message(
-            PromptCorrect(
-                semantic_map=semantic_map_object_str).get_prompt_text())
-
-        for query_idx, query in enumerate(queries):
-
-            # PLAN
-            # Append user message
-            planner_conversation_history.append_user_message(
-                query)
-            # Get response
+        # Skip if exists
+        plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                               mode,
+                                               constants.METHOD_SELF_REFLECTION,
+                                               llm_provider.get_provider_name(),
+                                               semantic_map_basename,
+                                               query_id,
+                                               "plan_0.json")
+        # Get response
+        if os.path.exists(plan_response_file_path):
+            print(f"Skipping {plan_response_file_path}...")
+            plan_response = text_utils.dict_to_json_str(
+                file_utils.load_json(plan_response_file_path))
+        else:
             plan_response = llm_provider.generate_json(
-                planner_conversation_history)
-            # Append assistant message
-            planner_conversation_history.append_assistant_message(
-                plan_response)
-
-            # Save plan response
-            plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
-                                                   mode,
-                                                   constants.METHOD_MULTIAGENT_REFLECTION,
-                                                   llm_provider.get_provider_name(),
-                                                   semantic_map_basename,
-                                                   str(query_idx),
-                                                   "first_plan.json")
+                plan_conversation_history)
             file_utils.create_directories_for_file(plan_response_file_path)
             file_utils.save_json_str_to_file(json_str=plan_response,
                                              output_path=plan_response_file_path)
+        # Append response to conversation history
+        plan_conversation_history.append_assistant_message(plan_response)
 
-            # SELF REFINE
-            # Append user prompt
-            self_reflector_conversation_history.append_user_message(
-                PromptReflectUser(query=query,
-                                  preliminary_response=plan_response).get_prompt_text())
+        # Initial plan is response to be refined
+        response_to_be_refined = plan_response
+
+        # Set reflection and correction first prompts *user()
+        self_reflection_conversation_history.append_user_message(PromptReflectAgent(
+            semantic_map=semantic_map_object_str).get_prompt_text())
+        correction_conversation_history.append_user_message(PromptCorrect(
+            semantic_map=semantic_map_object_str).get_prompt_text())
+
+        for reflection_iteration_idx in range(reflection_iterations):
+
+            ##########################################
+            ############## SELF-REFLECT ##############
+            ##########################################
+            print("reflecting")
+            # Append prompt (user)
+            self_reflection_conversation_history.append_user_message(
+                PromptReflectUser(
+                    query=query_text,
+                    plan_response=response_to_be_refined).get_prompt_text(),
+            )
+
+            # Skip if exists
+            self_reflection_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                                              mode,
+                                                              constants.METHOD_SELF_REFLECTION,
+                                                              llm_provider.get_provider_name(),
+                                                              semantic_map_basename,
+                                                              query_id,
+                                                              f"self_reflection_{reflection_iteration_idx}.txt")
             # Get response
-            self_reflection_response = llm_provider.generate_text(
-                self_reflector_conversation_history)
-            # Append assistant prompt
-            self_reflector_conversation_history.append_assistant_message(
+            if os.path.exists(self_reflection_response_file_path):
+                print(f"Skipping {self_reflection_response_file_path}...")
+                self_reflection_response = text_utils.dict_to_json_str(
+                    file_utils.read_text_from_file(self_reflection_response_file_path))
+            else:
+                self_reflection_response = llm_provider.generate_text(
+                    self_reflection_conversation_history)
+                file_utils.create_directories_for_file(
+                    self_reflection_response_file_path)
+                file_utils.save_text_to_file(text=self_reflection_response,
+                                             output_path=self_reflection_response_file_path)
+            # Append response (assistant)
+            self_reflection_conversation_history.append_assistant_message(
                 self_reflection_response)
 
-            # Save self-reflection response
+            ##########################################
+            ################ CORRECT #################
+            ##########################################
+            print("correcting")
+            # Append prompt (user)
+            correction_conversation_history.append_user_message(
+                PromptCorrectUser(
+                    plan_response=response_to_be_refined,
+                    self_reflection_response=self_reflection_response).get_prompt_text())
+
+            # Skip if exists
+            correction_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                                         mode,
+                                                         constants.METHOD_SELF_REFLECTION,
+                                                         llm_provider.get_provider_name(),
+                                                         semantic_map_basename,
+                                                         query_id,
+                                                         f"plan_{reflection_iteration_idx+1}.json")
+            # Get response
+            if os.path.exists(correction_response_file_path):
+                print(f"Skipping {correction_response_file_path}...")
+                correction_response = text_utils.dict_to_json_str(
+                    file_utils.load_json(correction_response_file_path))
+            else:
+                correction_response = llm_provider.generate_json(
+                    correction_conversation_history)
+                file_utils.create_directories_for_file(
+                    correction_response_file_path)
+                file_utils.save_json_str_to_file(json_str=correction_response,
+                                                 output_path=correction_response_file_path)
+            # Append response (assistant)
+            correction_conversation_history.append_assistant_message(
+                correction_response)
+
+            # New response to be refined
+            response_to_be_refined = correction_response
+
+        # Once reflection iterations finished, new set final plan
+        final_plan_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                            mode,
+                                            constants.METHOD_SELF_REFLECTION,
+                                            llm_provider.get_provider_name(),
+                                            semantic_map_basename,
+                                            query_id,
+                                            f"final_plan.json")
+        file_utils.create_directories_for_file(
+            final_plan_file_path)
+        file_utils.save_json_str_to_file(json_str=correction_response,
+                                         output_path=final_plan_file_path)
+
+
+def plan_multiagent_reflection(mode: str, semantic_map: list, llm_provider: LargeLanguageModel, queries: list, reflection_iterations: int):
+
+    semantic_map_basename = semantic_map[0]
+    semantic_map_object = semantic_map[1]
+    semantic_map_object_str = text_utils.dict_to_json_str(semantic_map_object)
+
+    plan_conversation_history = ConversationHistory()
+    self_reflection_conversation_history = ConversationHistory()
+    correction_conversation_history = ConversationHistory()
+
+    for query_id, query_text in tqdm.tqdm(queries,
+                                          desc=f"Ex. {mode} {constants.METHOD_SELF_REFLECTION} {semantic_map_basename} {llm_provider.get_provider_name()}..."):
+
+        # New query -> empty conversation histories
+        plan_conversation_history.clear()
+        self_reflection_conversation_history.clear()
+        correction_conversation_history.clear()
+
+        ##########################################
+        ################## PLAN ##################
+        ##########################################
+        print("planning")
+        # Append prompt (system)
+        plan_conversation_history.append_system_message(
+            PromptPlanAgent(
+                semantic_map=semantic_map_object_str).get_prompt_text(),
+        )
+        # Append query (user)
+        plan_conversation_history.append_user_message(
+            PromptPlanUser(query=query_text).get_prompt_text()
+        )
+
+        # Skip if exists
+        plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                               mode,
+                                               constants.METHOD_MULTIAGENT_REFLECTION,
+                                               llm_provider.get_provider_name(),
+                                               semantic_map_basename,
+                                               query_id,
+                                               "plan_0.json")
+        # Get response
+        if os.path.exists(plan_response_file_path):
+            print(f"Skipping {plan_response_file_path}...")
+            plan_response = text_utils.dict_to_json_str(
+                file_utils.load_json(plan_response_file_path))
+        else:
+            plan_response = llm_provider.generate_json(
+                plan_conversation_history)
+            file_utils.create_directories_for_file(plan_response_file_path)
+            file_utils.save_json_str_to_file(json_str=plan_response,
+                                             output_path=plan_response_file_path)
+        # Append response (assistant)
+        plan_conversation_history.append_assistant_message(plan_response)
+
+        # Initial plan is response to be refined
+        response_to_be_refined = plan_response
+
+        # Set reflection and correction first prompts (system)
+        self_reflection_conversation_history.append_system_message(PromptReflectAgent(
+            semantic_map=semantic_map_object_str).get_prompt_text())
+        correction_conversation_history.append_system_message(PromptCorrectAgent(
+            semantic_map=semantic_map_object_str).get_prompt_text())
+
+        for reflection_iteration_idx in range(reflection_iterations):
+
+            ##########################################
+            ################ REFLECT #################
+            ##########################################
+            print("reflecting")
+            # Append query and plan (user)
+            self_reflection_conversation_history.append_user_message(
+                PromptReflectUser(
+                    query=query_text,
+                    plan_response=response_to_be_refined).get_prompt_text(),
+            )
+
+            # Skip if exists
             self_reflection_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                               mode,
                                                               constants.METHOD_MULTIAGENT_REFLECTION,
                                                               llm_provider.get_provider_name(),
                                                               semantic_map_basename,
-                                                              str(query_idx),
-                                                              "self_reflection.txt")
-            file_utils.save_text_to_file(text=self_reflection_response,
-                                         output_path=self_reflection_response_file_path)
-
-            # CORRECT
-            # Append user prompt
-            corrector_conversation_history.append_user_message(
-                PromptCorrectUser(plan_response=plan_response,
-                                  self_reflection_response=self_reflection_response).get_prompt_text())
+                                                              query_id,
+                                                              f"reflection_{reflection_iteration_idx}.txt")
             # Get response
-            correction_response = llm_provider.generate_json(
-                corrector_conversation_history)
-            # Append assistant message
-            corrector_conversation_history.append_assistant_message(
-                correction_response)
+            if os.path.exists(self_reflection_response_file_path):
+                print(f"Skipping {self_reflection_response_file_path}...")
+                self_reflection_response = text_utils.dict_to_json_str(
+                    file_utils.read_text_from_file(self_reflection_response_file_path))
+            else:
+                self_reflection_response = llm_provider.generate_text(
+                    self_reflection_conversation_history)
+                file_utils.create_directories_for_file(
+                    self_reflection_response_file_path)
+                file_utils.save_text_to_file(text=self_reflection_response,
+                                             output_path=self_reflection_response_file_path)
+            # Append response (assistant)
+            self_reflection_conversation_history.append_assistant_message(
+                self_reflection_response)
 
-            # Save correction response
+            ##########################################
+            ################ CORRECT #################
+            ##########################################
+            print("correcting")
+            # Append prompt (user)
+            correction_conversation_history.append_user_message(
+                PromptCorrectUser(
+                    plan_response=response_to_be_refined,
+                    self_reflection_response=self_reflection_response).get_prompt_text())
+
+            # Skip if exists
             correction_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                          mode,
                                                          constants.METHOD_MULTIAGENT_REFLECTION,
                                                          llm_provider.get_provider_name(),
                                                          semantic_map_basename,
-                                                         str(query_idx),
-                                                         "final_plan.json")
-            file_utils.save_json_str_to_file(json_str=correction_response,
-                                             output_path=correction_response_file_path)
+                                                         query_id,
+                                                         f"plan_{reflection_iteration_idx+1}.json")
+            if os.path.exists(correction_response_file_path):
+                print(f"Skipping {correction_response_file_path}...")
+                correction_response = text_utils.dict_to_json_str(
+                    file_utils.load_json(correction_response_file_path))
+            else:
+                # Get response
+                correction_response = llm_provider.generate_json(
+                    correction_conversation_history)
+                file_utils.create_directories_for_file(
+                    correction_response_file_path)
+                file_utils.save_json_str_to_file(json_str=correction_response,
+                                                 output_path=correction_response_file_path)
+            # Append response (assistant)
+            correction_conversation_history.append_assistant_message(
+                correction_response)
+
+            # New response to be refined
+            response_to_be_refined = correction_response
+
+        # Once reflection iterations finished, new set final plan
+        final_plan_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
+                                            mode,
+                                            constants.METHOD_SELF_REFLECTION,
+                                            llm_provider.get_provider_name(),
+                                            semantic_map_basename,
+                                            query_id,
+                                            f"final_plan.json")
+        file_utils.create_directories_for_file(
+            final_plan_file_path)
+        file_utils.save_json_str_to_file(json_str=correction_response,
+                                         output_path=final_plan_file_path)
 
 
-def plan_ensembling(mode: str, semantic_map, queries: list):
+def plan_ensembling(mode: str, semantic_map, chooser_llm_provider: LargeLanguageModel, queries: list):
 
     semantic_map_basename = semantic_map[0]
     semantic_map_object = semantic_map[1]
     semantic_map_object_str = text_utils.dict_to_json_str(semantic_map_object)
 
-    plan_responses = list()
+    for query_id, query_text in tqdm.tqdm(queries,
+                                          desc=f"Ex. {mode} {constants.METHOD_SELF_REFLECTION} {semantic_map_basename} {chooser_llm_provider.get_provider_name()}..."):
 
-    for query_idx, query in enumerate(queries):
+        plan_responses = list()
 
-        planner_conversation_history = ConversationHistory()
+        # Create N LLMs
+        planner_llms = [constants.GEMINI_1_0_PRO, constants.GEMINI_1_0_PRO, constants.GEMINI_1_0_PRO,
+                        constants.GEMINI_1_5_PRO, constants.GEMINI_1_5_PRO, constants.GEMINI_1_5_PRO]
+        planner_llms_labels = [f"{llm_provider.get_provider_name(
+        )}_{llm_index}" for llm_index, llm_provider in enumerate(planner_llms)]
 
-        llm_chooser = constants.GEMINI_1_5_PRO
-        for llm_provider in (constants.GEMINI_1_0_PRO, constants.GEMINI_1_5_PRO, constants.CHAT_GPT_3_5_TURBO,
-                             constants.CHAT_GPT_4_O):
+        # Unique conversation history
+        conversation_history = ConversationHistory()
 
-            # PLAN
-            planner_conversation_history.clear()
-            # Append system prompt
-            planner_conversation_history.append_system_message(
+        for llm_label, llm_provider in zip(planner_llms_labels, planner_llms):
+
+            ##########################################
+            ################## PLAN ##################
+            ##########################################
+            print(f"Planning {llm_label}...")
+            conversation_history.clear()
+            # Append prompt (user)
+            conversation_history.append_user_message(
                 PromptPlan(
-                    semantic_map=semantic_map_object_str).get_prompt_text())
-            # Append user prompt
-            planner_conversation_history.append_user_message(
-                query)
+                    semantic_map=semantic_map_object_str,
+                    query=query_text).get_prompt_text())
+
             # Get response
-            plan_response = llm_provider.generate_json(
-                planner_conversation_history)
-
-            plan_responses.append(plan_response)
-
-            # Save response
             plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                    mode,
                                                    constants.METHOD_ENSEMBLING,
+                                                   chooser_llm_provider.get_provider_name(),
                                                    semantic_map_basename,
-                                                   str(query_idx),
-                                                   f"plan_response_{llm_provider.get_provider_name()}.json")
-            file_utils.create_directories_for_file(plan_response_file_path)
-            file_utils.save_json_str_to_file(json_str=plan_response,
-                                             output_path=plan_response_file_path)
+                                                   query_id,
+                                                   f"plan_{llm_label}.json")
+            # Skip if exists
+            if os.path.exists(plan_response_file_path):
+                print(f"Skipping {plan_response_file_path}...")
+                # Load response
+                plan_response = text_utils.dict_to_json_str(
+                    file_utils.load_json(plan_response_file_path))
+            else:
+                # Get response
+                plan_response = llm_provider.generate_json(
+                    conversation_history)
+                # Save response
+                file_utils.create_directories_for_file(
+                    plan_response_file_path)
+                file_utils.save_json_str_to_file(json_str=plan_response,
+                                                 output_path=plan_response_file_path)
 
-        # CHOOSE
-        chooser_conversation_history = ConversationHistory()
-        chooser_conversation_history.clear()
-        # Append system prompt
-        chooser_conversation_history.append_system_message(
-            ChooserPrompt(llm_responses=plan_responses,
-                          semantic_map=semantic_map_object_str).get_prompt_text())
-        print(chooser_conversation_history)
-        choice_response = llm_chooser.generate_json(
-            chooser_conversation_history)
+            plan_responses.append(plan_response)
 
-        # Save response
+        ##########################################
+        ################# CHOOSE #################
+        ##########################################
+        print("Choosing...")
+        conversation_history.clear()
+
         choice_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                  mode,
                                                  constants.METHOD_ENSEMBLING,
+                                                 chooser_llm_provider.get_provider_name(),
                                                  semantic_map_basename,
-                                                 str(query_idx),
-                                                 f"choice.json")
-        file_utils.save_json_str_to_file(json_str=choice_response,
-                                         output_path=choice_response_file_path)
+                                                 str(query_id),
+                                                 f"choice_{len(planner_llms)}.json")
+        # Append prompt (system)
+        conversation_history.append_system_message(
+            ChooserPrompt(llm_responses=plan_responses,
+                          semantic_map=semantic_map_object_str,
+                          query=query_text).get_prompt_text())
+
+        if os.path.exists(choice_response_file_path):
+            print(f"Skipping {plan_response_file_path}...")
+        else:
+            # Get response
+            choice_response = chooser_llm_provider.generate_json(
+                conversation_history)
+            # Save response
+            file_utils.save_json_str_to_file(json_str=choice_response,
+                                             output_path=choice_response_file_path)
 
 
 def main(args):
+    # Load llm
+    llm_provider = None
+    if args.llm == constants.LLM_GEMINI_1_0_PRO:
+        llm_provider = constants.GEMINI_1_0_PRO
+    elif args.llm == constants.LLM_GEMINI_1_5_PRO:
+        llm_provider = constants.GEMINI_1_5_PRO
+
     # Load and pre-process semantic map
     semantic_maps = list()
     for semantic_map_file in os.listdir(constants.SEMANTIC_MAPS_FOLDER_PATH):
@@ -398,15 +481,17 @@ def main(args):
 
         # Plan actions for every method
         if args.method == constants.METHOD_BASE:
-            plan_base(args.mode, pre_processed_semantic_map, queries)
+            plan_base(args.mode, pre_processed_semantic_map,
+                      llm_provider, queries)
         elif args.method == constants.METHOD_SELF_REFLECTION:
             plan_self_reflection(
-                args.mode, pre_processed_semantic_map, queries)
+                args.mode, pre_processed_semantic_map, llm_provider, queries, args.reflection_iterations)
         elif args.method == constants.METHOD_MULTIAGENT_REFLECTION:
             plan_multiagent_reflection(
-                args.mode, pre_processed_semantic_map, queries)
+                args.mode, pre_processed_semantic_map, llm_provider, queries, args.reflection_iterations)
         elif args.method == constants.METHOD_ENSEMBLING:
-            plan_ensembling(args.mode, pre_processed_semantic_map, queries)
+            plan_ensembling(args.mode, pre_processed_semantic_map,
+                            llm_provider, queries)
 
 
 if __name__ == "__main__":
@@ -425,8 +510,21 @@ if __name__ == "__main__":
 
     parser.add_argument("--method",
                         type=str,
-                        help="TODO",  # TODO
+                        help="Which models from the ones tested to use",
                         choices=[constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING])
+
+    # in METHODS base, self_reflection and multiagent_reflection represents the main LLM
+    # in METHOD ensembling represents the chooser LLM
+    parser.add_argument("-l", "--llm",
+                        type=str,
+                        help="Which LLM to use: 0 -> Gemini 1.0 Pro; 1 -> Gemini 1.5 Pro",
+                        choices=[constants.LLM_GEMINI_1_0_PRO, constants.LLM_GEMINI_1_5_PRO])
+
+    # (only for METHODs self_reflection and multiagent_reflection)
+    parser.add_argument("-i", "--reflection-iterations",
+                        type=int,
+                        help="Number of reflection iterations",
+                        default=2)
 
     args = parser.parse_args()
 
