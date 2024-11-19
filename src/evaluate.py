@@ -3,7 +3,12 @@
 import argparse
 import os
 
+import pandas as pd
+import tqdm
+
 import constants
+from compare.comparison_result import ComparisonResult
+from results import table_1
 from utils import file_utils
 
 
@@ -28,7 +33,8 @@ def load_ai_results(reflection_iterations: int, semantic_map_basenames: list, qu
     n_not_loaded_responses = 0
     n_total_responses = 2 * 4 * 2 * 10 * 30  # TODO: include variables here
 
-    for mode in (constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY):
+    for mode in tqdm.tqdm((constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY),
+                          desc="Loading AI results..."):
         data[mode] = dict()
 
         for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING):
@@ -123,7 +129,8 @@ def load_human_results(semantic_map_basenames: list):
 
     data = dict()
 
-    for semantic_map_basename in semantic_map_basenames:
+    for semantic_map_basename in tqdm.tqdm(semantic_map_basenames,
+                                           desc="Loading human results..."):
         data[semantic_map_basename] = dict()
 
         ground_truth_file_path = os.path.join(constants.GROUND_TRUTH_FOLDER_PATH,
@@ -138,7 +145,89 @@ def load_human_results(semantic_map_basenames: list):
 
 
 def compare_human_ai_results(ai_result, human_result):
-    pass
+
+    if len(ai_result) == 0 and len(human_result) == 0:  # ai empty, human empty
+        return ComparisonResult.top_1_hit()
+    elif len(ai_result) == 0 and len(human_result) != 0:  # ai empty, human not empty
+        return ComparisonResult.no_hit()
+
+    elif len(ai_result) >= 1 and ai_result[0] in human_result:
+        return ComparisonResult.top_1_hit()
+    elif len(ai_result) >= 2 and ai_result[1] in human_result:
+        return ComparisonResult.top_2_hit()
+    elif len(ai_result) >= 3 and ai_result[2] in human_result:
+        return ComparisonResult.top_3_hit()
+    elif any(obj in ai_result for obj in human_result):
+        return ComparisonResult.top_any_hit()
+    else:
+        return ComparisonResult.no_hit()
+
+
+def compute_all_comparison_results(semantic_map_basenames: list, queries_ids: list, ai_results: dict, human_results: dict, reflection_iterations: int):
+
+    # pprint.pprint(ai_results)
+    # pprint.pprint(human_results)
+
+    all_comparison_results = dict()
+
+    for mode in (constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY):
+        all_comparison_results[mode] = dict()
+
+        for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING):
+            all_comparison_results[mode][method] = dict()
+
+            for llm in constants.LLM_PROVIDERS:
+                all_comparison_results[mode][method][llm.get_provider_name(
+                )] = dict()
+
+                for semantic_map_basename in semantic_map_basenames:
+                    all_comparison_results[mode][method][llm.get_provider_name(
+                    )][semantic_map_basename] = dict()
+
+                    for query_id in queries_ids:
+
+                        ai_result = ai_results[mode][method][llm.get_provider_name(
+                        )][semantic_map_basename][query_id]
+                        human_result = human_results[semantic_map_basename][query_id]
+
+                        # print("#"*100)
+                        # print("human_result", human_result)
+                        # print("ai_result", ai_result)
+
+                        comparison_result = compare_human_ai_results(
+                            ai_result, human_result)
+                        all_comparison_results[mode][method][llm.get_provider_name(
+                        )][semantic_map_basename][query_id] = comparison_result
+
+                        # print("comparison_result", comparison_result)
+
+    return all_comparison_results
+
+
+def compute_all_comparison_results_df(all_comparison_results):
+
+    # Flatten the nested dictionary into rows
+    flattened_data = []
+
+    for mode, mode_data in all_comparison_results.items():
+        for method, method_data in mode_data.items():
+            for llm, llm_data in method_data.items():
+                for semantic_map_basename, basename_data in llm_data.items():
+                    for query_id, comparison_result in basename_data.items():
+                        # Add a row for each combination of keys
+                        flattened_data.append({
+                            'Mode': mode,
+                            'Method': method,
+                            'LLM': llm,
+                            'SemanticMap': semantic_map_basename,
+                            'QueryID': query_id,
+                            'ComparisonResult': comparison_result
+                        })
+
+    # Convert to a DataFrame
+    df = pd.DataFrame(flattened_data)
+
+    return df
 
 
 def main(args):
@@ -150,25 +239,31 @@ def main(args):
         args.reflection_iterations, semantic_map_basenames, queries_ids)
     human_results = load_human_results(semantic_map_basenames)
 
-    # pprint.pprint(ai_results)
-    # pprint.pprint(human_results)
+    all_comparison_results = compute_all_comparison_results(
+        semantic_map_basenames, queries_ids, ai_results, human_results, args.reflection_iterations)
 
-    # for mode in (constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY):
-    #     for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING):
-    #         for llm in constants.LLM_PROVIDERS:
-    #             for semantic_map_basename in semantic_map_basenames:
-    #                 for query_id in queries_ids:
+    # Create pandas dataframe
+    all_comparison_results_df = compute_all_comparison_results_df(
+        all_comparison_results)
 
-    #                     ai_result = ai_results[mode][method][llm][semantic_map_basename][query_id]
-    #                     human_result = human_results[semantic_map_basename][query_id]
-
-    #                     compare_human_ai_results(ai_result, human_result)
+    # Generate TABLE 1
+    table_1_generator = table_1.Table1Generator(
+        all_comparison_results_df, mode=args.mode)
+    table_1_df = table_1_generator.generate_table()
+    print(table_1_df.to_string(index=False))
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="TODO")  # TODO
+
+    parser.add_argument("--mode",
+                        type=str,
+                        help="TODO",  # TODO
+                        choices=[constants.MODE_CERTAINTY,
+                                 constants.MODE_UNCERTAINTY],
+                        default="certainty")
 
     # (only for METHODs self_reflection and multiagent_reflection)
     parser.add_argument("-i", "--reflection-iterations",

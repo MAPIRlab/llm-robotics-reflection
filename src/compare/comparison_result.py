@@ -2,14 +2,15 @@ class ComparisonResult:
     """
     A class to represent comparison results between two lists.
     Each comparison result includes four integer attributes:
-    top_1, top_2, top_3, and any_position.
+    top_1, top_2, top_3, and top_any.
     """
 
-    def __init__(self, top_1=0, top_2=0, top_3=0, any_position=0):
+    def __init__(self, top_1=0, top_2=0, top_3=0, top_any=0, n_samples=1):
         self.top_1 = int(top_1)
         self.top_2 = int(top_2)
         self.top_3 = int(top_3)
-        self.any_position = int(any_position)
+        self.top_any = int(top_any)
+        self.n_samples = int(n_samples)
 
     def __add__(self, other):
         """
@@ -22,50 +23,70 @@ class ComparisonResult:
             top_1=self.top_1 + other.top_1,
             top_2=self.top_2 + other.top_2,
             top_3=self.top_3 + other.top_3,
-            any_position=self.any_position + other.any_position
+            top_any=self.top_any + other.top_any,
+            n_samples=self.n_samples + other.n_samples
         )
 
     def __repr__(self):
         return (f"ComparisonResult(top_1={self.top_1}, "
                 f"top_2={self.top_2}, "
                 f"top_3={self.top_3}, "
-                f"any_position={self.any_position})")
+                f"top_any={self.top_any}, "
+                f"n_samples={self.n_samples})")
+
+    def get_top_1_rate(self):
+        return self.top_1 / self.n_samples
+
+    def get_top_2_rate(self):
+        return self.top_2 / self.n_samples
+
+    def get_top_3_rate(self):
+        return self.top_3 / self.n_samples
+
+    def get_top_any_rate(self):
+        return self.top_any / self.n_samples
+
+    def get_n_samples(self):
+        return self.n_samples
 
     @staticmethod
     def top_1_hit():
         """
         Creates a ComparisonResult where top_1 hit is counted.
+        A hit in top 1 is also considered a hit in top 2, top 3, and top_any.
         """
-        return ComparisonResult(top_1=1, top_2=1, top_3=1, any_position=1)
+        return ComparisonResult(top_1=1, top_2=1, top_3=1, top_any=1)
 
     @staticmethod
     def top_2_hit():
         """
         Creates a ComparisonResult where top_2 hit is counted.
+        A hit in top 2 is also considered a hit in top 3 and top_any.
         """
-        return ComparisonResult(top_1=0, top_2=1, top_3=1, any_position=1)
+        return ComparisonResult(top_1=0, top_2=1, top_3=1, top_any=1)
 
     @staticmethod
     def top_3_hit():
         """
         Creates a ComparisonResult where top_3 hit is counted.
+        A hit in top 3 is also considered a hit in top_any.
         """
-        return ComparisonResult(top_1=0, top_2=0, top_3=1, any_position=1)
+        return ComparisonResult(top_1=0, top_2=0, top_3=1, top_any=1)
 
     @staticmethod
-    def any_position_hit():
+    def top_any_hit():
         """
-        Creates a ComparisonResult where any position hit is counted,
+        Creates a ComparisonResult where a hit in any position is counted,
         but not in top 1-3.
         """
-        return ComparisonResult(top_1=0, top_2=0, top_3=0, any_position=1)
+        return ComparisonResult(top_1=0, top_2=0, top_3=0, top_any=1)
 
     @staticmethod
     def no_hit():
         """
         Creates a ComparisonResult where there is no hit.
         """
-        return ComparisonResult(top_1=0, top_2=0, top_3=0, any_position=0)
+        return ComparisonResult(top_1=0, top_2=0, top_3=0, top_any=0)
 
 
 if __name__ == '__main__':
@@ -79,8 +100,8 @@ if __name__ == '__main__':
     cr3 = ComparisonResult.top_3_hit()
     print("Test Case 3 (Top 3 Hit):", cr3)
 
-    cr4 = ComparisonResult.any_position_hit()
-    print("Test Case 4 (Any Position Hit):", cr4)
+    cr4 = ComparisonResult.top_any_hit()
+    print("Test Case 4 (Top Any Hit):", cr4)
 
     cr5 = ComparisonResult.no_hit()
     print("Test Case 5 (No Hit):", cr5)
