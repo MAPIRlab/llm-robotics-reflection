@@ -1,6 +1,85 @@
 
 from prompt.prompt import Prompt
 
+# EXAMPLE 1: descriptive queries
+EXAMPLE_1 = """
+<EXAMPLE_1>
+<SEMANTIC_MAP>
+{"instances":{
+"obj1":{"bbox":{"center":[1,1.5,0.5],"size":[0.5,0.5,0.2]},"n_observations":90,"results":{"notebook":92}},
+"obj2":{"bbox":{"center":[1,1.5,0],"size":[2,1,0.5]},"n_observations":75,"results":{"desk":89}},
+"obj3":{"bbox":{"center":[3,3,0.5],"size":[0.6,0.4,0.3]},"n_observations":65,"results":{"magazine":88}},
+"obj4":{"bbox":{"center":[3.5,3,0],"size":[2,1,0.5]},"n_observations":80,"results":{"coffee table":85}}}}
+</SEMANTIC_MAP>
+
+<QUERY>
+Locate a notebook lying on a workspace.
+</QUERY>
+
+EXPECTED RESPONSE:
+{  
+    "inferred_query": "Identify a notebook lying on a workspace.",  
+    "query_achievable": true,  
+    "relevant_objects": ["obj1", "obj2"],  
+    "explanation": "The semantic map identifies 'obj1' as a notebook with high confidence (92) and 'obj2' as a desk directly beneath it, based on their bounding box center coordinates. This makes 'obj1' the notebook lying on a workspace."  
+}  
+</EXAMPLE1>
+"""
+
+# EXAMPLE 2: affordance queries
+EXAMPLE_2 = """
+<EXAMPLE_2>
+<SEMANTIC_MAP>
+{"instances":{
+"obj1":{"bbox":{"center":[1,1,0],"size":[2,1,0.5]},"n_observations":85,"results":{"sofa":90}},
+"obj2":{"bbox":{"center":[0.5,1.5,0.5],"size":[0.5,0.5,0.3]},"n_observations":60,"results":{"side table":88}},
+"obj3":{"bbox":{"center":[3,2,0.5],"size":[0.6,0.4,0.2]},"n_observations":50,"results":{"chair":85}},
+"obj4":{"bbox":{"center":[2,3,0],"size":[1.5,0.5,0.5]},"n_observations":70,"results":{"coffee table":89}}}}
+</SEMANTIC_MAP>
+
+<QUERY>
+Where can I rest comfortably and place a drink next to me?
+</QUERY>
+
+EXPECTED RESPONSE:
+{  
+    "inferred_query": "Identify a place to rest comfortably and place a drink nearby.",  
+    "query_achievable": true,  
+    "relevant_objects": ["obj1", "obj2"],  
+    "explanation": "The semantic map identifies 'obj1' as a sofa with high confidence (90%), providing a comfortable place to rest, and 'obj2' as a side table nearby, suitable for holding a drink. Their bounding box center coordinates confirm their spatial proximity."  
+}
+</EXAMPLE2>
+"""
+
+EXAMPLE_3 = """
+<EXAMPLE_3>
+<SEMANTIC_MAP>
+{"instances":{
+"obj1":{"bbox":{"center":[2,1.5,0],"size":[0.4,0.4,0.3]},"n_observations":90,"results":{"cup":85}},
+"obj2":{"bbox":{"center":[1,1,0],"size":[0.5,0.5,0.5]},"n_observations":88,"results":{"bowl":92}},
+"obj3":{"bbox":{"center":[3,2,0.5],"size":[0.3,0.3,0.2]},"n_observations":75,"results":{"plate":90}},
+"obj4":{"bbox":{"center":[4,1,0],"size":[0.8,0.5,0.5]},"n_observations":70,"results":{"tray":80}}}}
+</SEMANTIC_MAP>
+
+<QUERY>
+Find something to hold food that isn't a plate.
+</QUERY>
+
+EXPECTED RESPONSE:
+{  
+    "inferred_query": "Identify an object to hold food that is not a plate.",  
+    "query_achievable": true,  
+    "relevant_objects": ["obj2", "obj1", "obj4"],  
+    "explanation": "The semantic map identifies 'obj2' as a bowl with the highest confidence (92%), making it the best option to hold food. 'obj1' (cup) and 'obj4' (tray) are also suitable, but ranked lower based on their typical usage for food storage or serving."  
+}
+</EXAMPLE_4>
+"""
+
+PLAN_EXAMPLES = f"""
+{EXAMPLE_1}
+{EXAMPLE_2}
+{EXAMPLE_3}"""
+
 
 class PromptPlan (Prompt):
 
@@ -29,6 +108,13 @@ Respond with a JSON dictionary with the following fields:
 The response should only be a JSON object, no explanations, titles or additional information required.
 </OUTPUT_FORMAT>
 
+<EXAMPLES>
+Here are some examples of the process:
+{{examples}}
+</EXAMPLES>
+
+Now respond to the user query following the INSTRUCTION and the OUTPUT_FORMAT, based on the input SEMANTIC_MAP.
+
 <SEMANTIC_MAP>
 The semantic map in JSON format is the following:
 {{semantic_map}}
@@ -37,15 +123,19 @@ The semantic map in JSON format is the following:
 <USER_QUERY>
 {{query}}
 </USER_QUERY>
-
-Now respond to the user query following the INSTRUCTION and the OUTPUT_FORMAT, based on the input SEMANTIC_MAP.
 """
 
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
+    def replace_examples(prompt_text):
+        return prompt_text.replace("{{examples}}", PLAN_EXAMPLES)
+
     def global_replace(self, prompt_text: str) -> str:
-        return self.replace_prompt_data_dict(self.prompt_data_dict, prompt_text)
+        prompt_text = self.replace_prompt_data_dict(
+            self.prompt_data_dict, prompt_text)
+        prompt_text = self.replace_examples(prompt_text)
+        return prompt_text
 
 
 class PromptPlanAgent (Prompt):
@@ -74,19 +164,30 @@ Respond with a JSON dictionary with the following fields:
 The response should only be a JSON object, no explanations, titles or additional information required.
 </OUTPUT_FORMAT>
 
+<EXAMPLES>
+Here are some examples of the process:
+{{examples}}
+</EXAMPLES>
+
+Now you will receive user queries and respond to them following the ROLE and the OUTPUT_FORMAT, based on the input SEMANTIC_MAP.
+
 <SEMANTIC_MAP>
 The semantic map in JSON format is the following:
 {{semantic_map}}
 </SEMANTIC_MAP>
-
-Now you will receive user queries and respond to them following the ROLE and the OUTPUT_FORMAT, based on the input SEMANTIC_MAP.
 """
 
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
+    def replace_examples(prompt_text):
+        return prompt_text.replace("{{examples}}", PLAN_EXAMPLES)
+
     def global_replace(self, prompt_text: str) -> str:
-        return self.replace_prompt_data_dict(self.prompt_data_dict, prompt_text)
+        prompt_text = self.replace_prompt_data_dict(
+            self.prompt_data_dict, prompt_text)
+        prompt_text = self.replace_examples(prompt_text)
+        return prompt_text
 
 
 class PromptPlanUser (Prompt):
