@@ -79,7 +79,7 @@ def plan_self_reflection(mode: str, semantic_map: list, llm_provider: LargeLangu
         ##########################################
         ################## PLAN ##################
         ##########################################
-        print("planning")
+        print("Planning...")
         # Append prompt (user)
         plan_conversation_history.append_user_message(
             PromptPlan(
@@ -123,7 +123,7 @@ def plan_self_reflection(mode: str, semantic_map: list, llm_provider: LargeLangu
             ##########################################
             ############## SELF-REFLECT ##############
             ##########################################
-            print("reflecting")
+            print("Reflecting...")
             # Append prompt (user)
             self_reflection_conversation_history.append_user_message(
                 PromptReflectUser(
@@ -158,7 +158,7 @@ def plan_self_reflection(mode: str, semantic_map: list, llm_provider: LargeLangu
             ##########################################
             ################ CORRECT #################
             ##########################################
-            print("correcting")
+            print("Correcting...")
             # Append prompt (user)
             correction_conversation_history.append_user_message(
                 PromptCorrectUser(
@@ -227,7 +227,7 @@ def plan_multiagent_reflection(mode: str, semantic_map: list, llm_provider: Larg
         ##########################################
         ################## PLAN ##################
         ##########################################
-        print("planning")
+        print("Planning...")
         # Append prompt (system)
         plan_conversation_history.append_system_message(
             PromptPlanAgent(
@@ -274,7 +274,7 @@ def plan_multiagent_reflection(mode: str, semantic_map: list, llm_provider: Larg
             ##########################################
             ################ REFLECT #################
             ##########################################
-            print("reflecting")
+            print("Reflecting...")
             # Append query and plan (user)
             self_reflection_conversation_history.append_user_message(
                 PromptReflectUser(
@@ -309,7 +309,7 @@ def plan_multiagent_reflection(mode: str, semantic_map: list, llm_provider: Larg
             ##########################################
             ################ CORRECT #################
             ##########################################
-            print("correcting")
+            print("Correcting...")
             # Append prompt (user)
             correction_conversation_history.append_user_message(
                 PromptCorrectUser(
@@ -473,7 +473,7 @@ def main(args):
         queries.append((query_id, queries_dict["queries"][query_id]))
 
     # MAIN LOOP
-    for (s_m_b, s_m_o) in semantic_maps:
+    for (s_m_b, s_m_o) in semantic_maps[:args.number_maps]:
 
         # Pre-process semantic map
         pre_processed_semantic_map = (s_m_b, preprocess.preprocess_semantic_map(s_m_o,

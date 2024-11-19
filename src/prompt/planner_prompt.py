@@ -72,7 +72,7 @@ EXPECTED RESPONSE:
     "relevant_objects": ["obj2", "obj1", "obj4"],  
     "explanation": "The semantic map identifies 'obj2' as a bowl with the highest confidence (92%), making it the best option to hold food. 'obj1' (cup) and 'obj4' (tray) are also suitable, but ranked lower based on their typical usage for food storage or serving."  
 }
-</EXAMPLE_4>
+</EXAMPLE_3>
 """
 
 PLAN_EXAMPLES = f"""
@@ -128,7 +128,7 @@ The semantic map in JSON format is the following:
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", PLAN_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:
@@ -180,7 +180,7 @@ The semantic map in JSON format is the following:
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", PLAN_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:

@@ -257,7 +257,7 @@ The semantic map in JSON format is the following:
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", SELF_REFLECTION_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:
@@ -340,7 +340,7 @@ The semantic map in JSON format is the following:
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", SELF_REFLECTION_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:

@@ -215,7 +215,7 @@ Now you will receive PRELIMINARY_RESPONSES and their FEEDBACK, and your task is 
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", CORRECTION_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:
@@ -285,7 +285,7 @@ Now you will receive PRELIMINARY_RESPONSES and their FEEDBACK, and your task is 
     def get_system_prompt(self) -> str:
         return self.SYSTEM_PROMPT
 
-    def replace_examples(prompt_text):
+    def replace_examples(self, prompt_text):
         return prompt_text.replace("{{examples}}", CORRECTION_EXAMPLES)
 
     def global_replace(self, prompt_text: str) -> str:
