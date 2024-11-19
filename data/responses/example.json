@@ -1,0 +1,115 @@
+{
+    "responses": {
+        "query_01": [],
+        "query_02": [
+            "obj40"
+        ],
+        "query_03": [
+            "obj70"
+        ],
+        "query_04": [
+            "obj35"
+        ],
+        "query_05": [],
+        "query_06": [
+            "obj1"
+        ],
+        "query_07": [],
+        "query_08": [
+            "obj37",
+            "obj1"
+        ],
+        "query_09": [],
+        "query_10": [],
+        "query_11": [
+            "obj1",
+            "obj37"
+        ],
+        "query_12": [
+            "obj1",
+            "obj37"
+        ],
+        "query_13": [],
+        "query_14": [],
+        "query_15": [
+            "obj1",
+            "obj37"
+        ],
+        "query_16": [
+            "obj37"
+        ],
+        "query_17": [
+            "obj102",
+            "obj100"
+        ],
+        "query_18": [
+            "obj35"
+        ],
+        "query_19": [
+            "obj37",
+            "obj70",
+            "obj77"
+        ],
+        "query_20": [],
+        "query_21": [
+            "obj35",
+            "obj77"
+        ],
+        "query_22": [
+            "obj1",
+            "obj70",
+            "obj37",
+            "obj26"
+        ],
+        "query_23": [
+            "obj70",
+            "obj1",
+            "obj26",
+            "obj37"
+        ],
+        "query_24": [
+            "obj1",
+            "obj22",
+            "obj36",
+            "obj51",
+            "obj52",
+            "obj53",
+            "obj86",
+            "obj91",
+            "obj100"
+        ],
+        "query_25": [
+            "obj35",
+            "obj1",
+            "obj37"
+        ],
+        "query_26": [
+            "obj102",
+            "obj100",
+            "obj26",
+            "obj70"
+        ],
+        "query_27": [
+            "obj1",
+            "obj51",
+            "obj52",
+            "obj53",
+            "obj86",
+            "obj91",
+            "obj40"
+        ],
+        "query_28": [
+            "obj70",
+            "obj1",
+            "obj40"
+        ],
+        "query_29": [
+            "obj70"
+        ],
+        "query_30": [
+            "obj37",
+            "obj70",
+            "obj77"
+        ]
+    }
+}
