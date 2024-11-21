@@ -18,6 +18,7 @@ def load_semantic_maps_basenames():
         semantic_map_basename = file_utils.get_file_basename(semantic_map_file)
         semantic_map_basenames.append(semantic_map_basename)
     return semantic_map_basenames
+    # return ["scannet_scene0392_01"]
 
 
 def load_queries_ids():
@@ -112,8 +113,8 @@ def load_ai_results(reflection_iterations: int, semantic_map_basenames: list, qu
                             )][semantic_map_basename][query_id] = response_file_content["relevant_objects"]
 
                         except (FileNotFoundError, KeyError, ValueError, IndexError) as e:
-                            print(f"Skipped answer: {
-                                  mode}\\{method}\\{llm.get_provider_name()}\\{semantic_map_basename}\\{query_id}: {e}")
+                            # print(f"Skipped answer: {
+                            #       mode}\\{method}\\{llm.get_provider_name()}\\{semantic_map_basename}\\{query_id}: {e}")
                             data[mode][method][llm.get_provider_name(
                             )][semantic_map_basename][query_id] = []
                             n_not_loaded_responses += 1
@@ -190,16 +191,17 @@ def compute_all_comparison_results(semantic_map_basenames: list, queries_ids: li
                         )][semantic_map_basename][query_id]
                         human_result = human_results[semantic_map_basename][query_id]
 
-                        # print("#"*100)
-                        # print("human_result", human_result)
-                        # print("ai_result", ai_result)
-
                         comparison_result = compare_human_ai_results(
                             ai_result, human_result)
                         all_comparison_results[mode][method][llm.get_provider_name(
                         )][semantic_map_basename][query_id] = comparison_result
 
-                        # print("comparison_result", comparison_result)
+                        if mode == "certainty" and method == "ensembling" and semantic_map_basename == "scannet_scene0000_00.json":
+                            print(method)
+                            print("#"*100)
+                            print("human_result", human_result)
+                            print("ai_result", ai_result)
+                            print("comparison_result", comparison_result)
 
     return all_comparison_results
 
@@ -237,6 +239,7 @@ def main(args):
 
     ai_results = load_ai_results(
         args.reflection_iterations, semantic_map_basenames, queries_ids)
+
     human_results = load_human_results(semantic_map_basenames)
 
     all_comparison_results = compute_all_comparison_results(

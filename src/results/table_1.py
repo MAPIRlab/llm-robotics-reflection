@@ -1,54 +1,77 @@
+import pandas as pd
+
+
 class Table1Generator:
-    def __init__(self, df_comparison_results, mode: str, llm_provider: str = "Google_gemini-1.5-pro"):
+
+    def __init__(self, df_comparison_results, mode: str, llm_label: str = "Google_gemini-1.5-pro"):
         self.df = df_comparison_results.copy()
         self.mode = mode
-        self.llm_provider = llm_provider
+        self.llm_label = llm_label
         self.table_df = None  # Will hold the final DataFrame
 
     def generate_table(self):
-        # Step 1: Filter the DataFrame
-        self.filter_data()
 
-        # Step 2: Add 'Dataset' and 'Query Type' columns
-        self.add_dataset_and_query_type()
+        # Filter by "LLM" and "Mode"
+        self.filter_mode_llm()
 
-        # Step 3: Aggregate the ComparisonResult objects
-        self.aggregate_results()
+        # HERE! for each Mode, Method, LLM and SemanticMap add a row called "Average", by aggregating the ComparisonResult values from all the Queries
+        self.add_average_per_mode_method_llm()
 
-        # Step 4: Extract metrics from ComparisonResult
-        self.extract_metrics()
+        # Add "Dataset" column
+        self.add_dataset_column()
 
-        # Step 5: Merge base method values
-        self.merge_base_values()
+        # Add "Query Type" columns
+        self.add_query_type_column()
 
-        # Step 6: Calculate differences from the base method
-        self.calculate_differences()
+        print(self.table_df)
 
-        # Step 7: Format the metric values for display
-        self.format_metrics()
+        # Group by "Dataset", "Method" and "Query Type" columns, aggregating ComparisonResults
+        self.group_by_dataset_method_and_query_type()
 
-        # Step 8: Clean up the DataFrame
-        self.cleanup_dataframe()
+        print(self.table_df.to_string())
 
-        # Step 9: Sort and rearrange columns
+        # Add "top_1", "top_2", "top_3", "top_any" columns from ComparisonResults
+        self.add_top_k_columns()
+
+        # Change "top_1", "top_2", "top_3", "top_any" to differences w.r.t. "Method" = base
+        self.compute_top_k_differences()
+
+        # Sort and rearrange columns
         self.finalize_table()
 
         return self.table_df
 
-    def filter_data(self):
+    def add_average_per_mode_method_llm(self):
+        # Group by Mode, Method, LLM, and SemanticMap
+        sum_rows = self.table_df.groupby(
+            ['Mode', 'Method', 'LLM', 'SemanticMap'], as_index=False
+        ).agg({"ComparisonResult": "sum"})
+
+        # Add a column to denote this is an "Average" row
+        sum_rows['QueryID'] = 'Average'
+
+        # Append the summed rows to the original DataFrame
+        self.table_df = pd.concat([self.table_df, sum_rows], ignore_index=True)
+
+    def filter_mode_llm(self):
         self.table_df = self.df[
             (self.df['Mode'] == self.mode) &
-            (self.df['LLM'] == self.llm_provider)
+            (self.df['LLM'] == self.llm_label)
         ]
 
-    def map_dataset(self, semantic_map):
-        if semantic_map.startswith("scannet_scene"):
+    def _map_dataset(self, semantic_map):
+        if semantic_map.startswith("scannet_"):
             return "scannet"
         elif semantic_map.startswith("scenenn_"):
             return "scenenn"
         return "unknown"  # Default if none match
 
-    def map_query_type(self, query_id):
+    def _map_query_type(self, query_id):
+
+        # Average row
+        if query_id == "Average":
+            return "Average"
+
         # Extract the numeric part of the QueryID
         query_number = int(query_id.split('_')[-1])
 
@@ -61,18 +84,20 @@ class Table1Generator:
             return "Negation"
         return "Unknown"  # Default if out of range
 
-    def add_dataset_and_query_type(self):
+    def add_dataset_column(self):
         self.table_df["Dataset"] = self.table_df['SemanticMap'].apply(
-            self.map_dataset)
-        self.table_df["Query Type"] = self.table_df['QueryID'].apply(
-            self.map_query_type)
+            self._map_dataset)
 
-    def aggregate_results(self):
+    def add_query_type_column(self):
+        self.table_df["Query Type"] = self.table_df['QueryID'].apply(
+            self._map_query_type)
+
+    def group_by_dataset_method_and_query_type(self):
         self.table_df = self.table_df.groupby(
             ['Dataset', 'Method', 'Query Type'], as_index=False
         ).agg({"ComparisonResult": "sum"})
 
-    def extract_metrics(self):
+    def add_top_k_columns(self):
         self.table_df['top_1'] = self.table_df['ComparisonResult'].apply(
             lambda x: x.get_top_1_rate())
         self.table_df['top_2'] = self.table_df['ComparisonResult'].apply(
@@ -122,6 +147,19 @@ class Table1Generator:
                        [f'diff_{col}' for col in [
                            'top_1', 'top_2', 'top_3', 'top_any']]
         self.table_df = self.table_df.drop(columns=cols_to_drop)
+
+    def compute_top_k_differences(self):
+        # Merge base method values
+        self.merge_base_values()
+
+        # Calculate differences from the base method
+        self.calculate_differences()
+
+        # Format the metric values for display
+        self.format_metrics()
+
+        # Clean up the DataFrame
+        self.cleanup_dataframe()
 
     def finalize_table(self):
         self.table_df = self.table_df[[

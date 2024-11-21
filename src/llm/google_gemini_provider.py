@@ -45,17 +45,15 @@ class GoogleGeminiProvider(LargeLanguageModel):
         model = GenerativeModel(model_name=self.model_name,
                                 system_instruction=system_instruction)
 
-        print("#"*100)
-        print("SYSTEM INSTRUCTION")
-        print(system_instruction)
-        print("CONTENTS")
-        print(len(contents))
+        # print("#"*100)
+        # print(f"system_instruction = {system_instruction}")
+        # print(f"len(contents) = {len(contents)}")
 
         # Get response
         response = model.generate_content(contents)
 
         response_text = response.candidates[0].content.parts[0].text
-        print("RESPONSE")
-        print(response_text)
+        # print("RESPONSE")
+        # print(response_text)
 
         return response_text

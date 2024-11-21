@@ -6,6 +6,7 @@
             "obj30"
         ],
         "query_03": [
+            "obj32",
             "obj50"
         ],
         "query_04": [
@@ -15,9 +16,7 @@
             "obj56"
         ],
         "query_06": [],
-        "query_07": [
-            "obj27"
-        ],
+        "query_07": [],
         "query_08": [
             "obj20",
             "obj26"
