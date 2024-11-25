@@ -1,11 +1,15 @@
 
 from prompt.prompt import Prompt
 
-# EXAMPLE 1: spatial reasoning + malformed JSON + correct whole response
+# EXAMPLE 1: spatial reasoning + malformed JSON
 EXAMPLE_1 = """
 <EXAMPLE_1>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[2.0,3.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":100,"results":{"book":80}},"obj2":{"bbox":{"center":[2.0,3.0,0.0],"size":[2.0,1.0,0.5]},"n_observations":50,"results":{"dining table":50}},"obj3":{"bbox":{"center":[5.0,5.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":80,"results":{"chair":70}},"obj4":{"bbox":{"center":[4.0,4.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":90,"results":{"book":85}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[2.0,3.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":100,"results":{"book":80}},
+"obj2":{"bbox":{"center":[2.0,3.0,0.0],"size":[2.0,1.0,0.5]},"n_observations":50,"results":{"dining table":50}},
+"obj3":{"bbox":{"center":[5.0,5.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":80,"results":{"chair":70}},
+"obj4":{"bbox":{"center":[4.0,4.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":90,"results":{"book":85}}}}
 </SEMANTIC_MAP>
 
 <QUERY>
@@ -27,21 +31,14 @@ I need the book that is on a table
 </PRELIMINARY_RESPONSE>
 
 EXPECTED RESPONSE:
-1. Comments on Correctness. Score: 3/10
-- Query achievable: OK.
-- Inferred query: OK.
-- Relevant objects: Error. It is true that "obj4" is a book, but it is false that "obj4" is on the table, because of its bounding box center coordinates. Instead, "obj1" is a book with high confidence and it is located on a table ("obj2", which is classified as dining table with a high score).
+1. Comments on Correctness. Score: 0/10
+- Relevant objects: Error. It is true that obj4 is a book, but it is false that obj4 is on the table, because of its bounding box center coordinates. Instead, obj1 is a book with high confidence and it is located on [2.0,3.0,0.5], which seems a to be on top of obj2 that is a dining table with a high score placed at [2.0,3.0,0.0].
 - Explanation: Error. As the relevant objects are incorrectly identified, the explanation is wrong.
-- JSON structure 1: OK. The response contains a JSON dictionary with four keys: "inferred_query", "query_achievable", "relevant_objects", and "explanation".
-- JSON structure 2: Error. The preliminary response does not follow the required JSON structure; "relevant_objects" should be a list of object IDs as strings, not a list of dictionaries.
+- JSON structure 2: Error. The preliminary response does not follow the required JSON structure; "relevant_objects" should be a list of object IDs as strings, not a list of dictionaries. This error makes the answer invalid, so the score is 0.
 2. Comments on Relevance. Score: 4/10
 - Identification: Error. The object identified for the task is wrong.
-- Sorting: N/A.
-- Details: OK.
-- Leftovers: "obj4" should not belong to the response.
+- Leftovers: obj4 should not belong to the response.
 3. Comments on Clarity. Score: 7/10
-- Clear: Even if the answer is incorrect, it contains a clear explanation.
-- Ambiguities: OK.
 4. Actions to improve response:
 - Change "relevant_objects" to ["obj1"].
 - Update the "explanation" accordingly.
@@ -50,44 +47,42 @@ EXPECTED RESPONSE:
 """
 
 
-# EXAMPLE 2: functionality + wrong order
+# EXAMPLE 2: correcting order
 EXAMPLE_2 = """
 <EXAMPLE_2>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[1,2,0],"size":[1,1,1]},"n_observations":100,"results":{"chair":90}},"obj2":{"bbox":{"center":[2,2,0],"size":[2,1,1.5]},"n_observations":80,"results":{"sofa":85}},"obj3":{"bbox":{"center":[3,2,0],"size":[1.5,1,0.5]},"n_observations":70,"results":{"bench":75}},"obj4":{"bbox":{"center":[4,2,0],"size":[2,1.5,0.5]},"n_observations":60,"results":{"dining table":80}},"obj5":{"bbox":{"center":[5,2,0],"size":[1,0.5,0.5]},"n_observations":50,"results":{"stool":65}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0],"size":[1,1,1]},"n_observations":100,"results":{"chair":90}},
+"obj2":{"bbox":{"center":[2,2,0],"size":[2,1,1.5]},"n_observations":80,"results":{"sofa":85}},
+"obj3":{"bbox":{"center":[3,2,0],"size":[1.5,1,0.5]},"n_observations":70,"results":{"bench":75}},
+"obj4":{"bbox":{"center":[4,2,0],"size":[2,1.5,0.5]},"n_observations":60,"results":{"dining table":80}},
+"obj5":{"bbox":{"center":[5,2,0],"size":[1,0.5,0.5]},"n_observations":50,"results":{"stool":65}}}}
 </SEMANTIC_MAP>
 
 <QUERY>
-I need the book that is on a table
+I need to sit down while on my laptop
 </QUERY>
 
 <PRELIMINARY_RESPONSE>
 {
     "inferred_query": "Find objects suitable for sitting and working on a laptop",
     "query_achievable": true,
-    "relevant_objects": ["obj5", "obj3", "obj2", "obj1"],
-    "explanation": "Objects 'obj5', 'obj3', 'obj2', and 'obj1' can be used to sit while working on your laptop."
+    "relevant_objects": ["obj5", "obj3", "obj4", "obj2", "obj1"],
+    "explanation": "Objects obj5, obj3, obj2, and obj1 can be used to sit while working on your laptop."
 }
 </PRELIMINARY_RESPONSE>
 
 EXPECTED RESPONSE:
 1. Comments on Correctness. Score: 4/10
-- Query achievable: OK.
-- Inferred query: OK.
-- Relevant objects: Partially correct. The objects 'obj1' (chair), 'obj2' (sofa), 'obj3' (bench), and 'obj5' (stool) are all seating options. However, for working on a laptop, 'obj1' and 'obj2' are more suitable due to comfort and ergonomics. The preliminary response includes all seating objects but doesn't prioritize them correctly.
+- Relevant objects: Partially correct. The objects obj1 (chair), obj2 (sofa), obj3 (bench), and obj5 (stool) are all seating options. However, for working on a laptop, obj1 and obj2 are more suitable due to comfort and ergonomics. The preliminary response includes all seating objects but doesn't prioritize them correctly.
 - Explanation: The explanation mentions the objects but fails to justify their relevance or prioritize them according to suitability.
-- JSON structure 1: OK.
-- JSON structure 2: OK.
 2. Comments on Relevance. Score: 3/10
 - Identification: Relevant objects are identified but not ordered by their suitability for the task.
-- Sorting: Objects are not sorted by relevance; less suitable options like 'obj5' (stool) and 'obj3' (bench) are listed before more suitable ones like 'obj1' (chair) and 'obj2' (sofa).
+- Sorting: Objects are not sorted by relevance; less suitable options like obj5 (stool) and obj3 (bench) are listed before more suitable ones like obj1 (chair) and obj2 (sofa).
 - Details: The response lacks details on why certain objects are more appropriate than others.
-- Leftovers: N/A.
 3. Comments on Clarity. Score: 8/10
-- Clear: The response is clear and easy to understand.
-- Ambiguities: No significant ambiguities present.
 4. Actions to Improve Response:
-- Reorder the "relevant_objects" list to prioritize the most suitable objects for working on a laptop, listing 'obj1' and 'obj2' first.
+- Reorder the "relevant_objects" list to prioritize the most suitable objects for working on a laptop, listing obj1 and obj2 first.
 - Enhance the "explanation" to justify the ordering, highlighting why certain objects are more appropriate for the task.
 </EXAMPLE_2>
 """
@@ -96,7 +91,11 @@ EXPECTED RESPONSE:
 EXAMPLE_3 = """
 <EXAMPLE_3>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[1,2,0],"size":[0.5,0.5,1]},"n_observations":100,"results":{"trash can":90}},"obj2":{"bbox":{"center":[2,2.5,0],"size":[0.8,0.8,1.2]},"n_observations":80,"results":{"toilet":85}},"obj3":{"bbox":{"center":[3,3,0],"size":[1,1,1]},"n_observations":70,"results":{"refrigerator":75}},"obj4":{"bbox":{"center":[4,4,0],"size":[0.5,0.5,0.5]},"n_observations":60,"results":{"flower":80}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0],"size":[0.5,0.5,1]},"n_observations":100,"results":{"trash can":90}},
+"obj2":{"bbox":{"center":[2,2.5,0],"size":[0.8,0.8,1.2]},"n_observations":80,"results":{"toilet":85}},
+"obj3":{"bbox":{"center":[3,3,0],"size":[1,1,1]},"n_observations":70,"results":{"refrigerator":75}},
+"obj4":{"bbox":{"center":[4,4,0],"size":[0.5,0.5,0.5]},"n_observations":60,"results":{"flower":80}}}}
 </SEMANTIC_MAP>
 
 <QUERY>
@@ -116,64 +115,50 @@ EXPECTED RESPONSE:
 1. Comments on Correctness. Score: 3/10
 - Query achievable: Error. The query is achievable using indirectly related objects present in the semantic map.
 - Inferred query: Error. The inferred query is too narrow; it should include objects that may emit unpleasant odors.
-- Relevant objects: Error. Objects like 'obj1' (trash can) and 'obj2' (toilet) are commonly associated with bad smells and should be included.
+- Relevant objects: Error. Objects like obj1 (trash can) and obj2 (toilet) are commonly associated with bad smells and should be included.
 - Explanation: Error. The explanation overlooks indirectly relevant objects that could fulfill the user's request.
-- JSON structure 1: OK.
-- JSON structure 2: OK.
 2. Comments on Relevance. Score: 5/10
 - Identification: Error. The response fails to identify objects indirectly related to the query.
-- Sorting: N/A.
 - Details: Lacking. Additional details on why certain objects are relevant are missing.
-- Leftovers: N/A.
 3. Comments on Clarity. Score: 8/10
 - Clear: The response is clear but incomplete.
-- Ambiguities: None. The response is straightforward but misses pertinent information.
 4. Actions to Improve Response:
 - Change "query_achievable" to true since the task can be achieved with existing objects.
 - Update "inferred_query" to "Find objects that may smell bad" to encompass indirectly related items.
-- Include "relevant_objects": ["obj1", "obj2"], representing the trash can and the toilet.
+- Include "relevant_objects": ["obj2", "obj1"], representing the trash can and the toilet. obj2 should be placed first as toilets have more probability of smelling bad than trash cans (obj1).
 - Revise the "explanation" to state that while no objects are explicitly labeled as smelling bad, these objects are associated with unpleasant odors and may satisfy the query.
 </EXAMPLE_3>
 """
 
-# EXAMPLE 4: response is ok
+# EXAMPLE 4: requesting specific object with no responses
 EXAMPLE_4 = """
 <EXAMPLE_4>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[1,2,0.5],"size":[1,0.5,0.5]},"n_observations":100,"results":{"sink":90}},"obj4":{"bbox":{"center":[3,3,0.5],"size":[1,0.5,0.5]},"n_observations":60,"results":{"sink":80}},"obj5":{"bbox":{"center":[5,5,0],"size":[1,1,1]},"n_observations":50,"results":{"bed":65}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0.5],"size":[1,0.5,0.5]},"n_observations":100,"results":{"sink":90}},
+"obj4":{"bbox":{"center":[3,3,0.5],"size":[1,0.5,0.5]},"n_observations":60,"results":{"sink":80}},
+"obj5":{"bbox":{"center":[5,5,0],"size":[1,1,1]},"n_observations":50,"results":{"bed":65}}}}
 </SEMANTIC_MAP>
 
 <QUERY>
-I need to find a place to wash my hands
+I need a refrigerator that is next to a sink
 </QUERY>
 
 <PRELIMINARY_RESPONSE>
 {
-    "inferred_query": "Identify locations where you can wash your hands",
-    "query_achievable": true,
-    "relevant_objects": ["obj1", "obj4"],
-    "explanation": "You can wash your hands at 'obj1' and 'obj4', which are both sinks."
+    "inferred_query": "Identify a refrigerator that is close to a sink",
+    "query_achievable": false,
+    "relevant_objects": [],
+    "explanation": "There is no refrigerator on the map"
 }
 </PRELIMINARY_RESPONSE>
 
 EXPECTED RESPONSE:
 1. Comments on Correctness. Score: 9/10
-- Query achievable: OK.
-- Inferred query: Excellent. The inferred query accurately captures the user's intent to find places suitable for washing hands.
-- Relevant objects: OK.
-- Explanation: Good. The explanation correctly identifies the sinks and their suitability for the task.
-- JSON structure 1: OK.
-- JSON structure 2: OK.
-Comments on Relevance. Score: 10/10
-- Identification: OK. All relevant objects are correctly identified.
-- Sorting: N/A. Both sinks are equally relevant for the task.
-- Details: Good level of detail provided in the explanation.
-- Leftovers: No irrelevant objects are included in the response.
-Comments on Clarity. Score: 10/10
-- Clear: The response is clear and easy to understand.
-- Ambiguities: No ambiguities present. The explanation is straightforward and concise.
-Actions to Improve Response:
-- Shortly indicate where each object is located to contribute to the improvement of the explanation.
+2. Comments on Relevance. Score: 10/10
+3. Comments on Clarity. Score: 10/10
+4. Actions to Improve Response:
+- Extend the explanation by mentioning that, although there are sinks on the map, there are no refrigerators, so the query is not achievable.
 </EXAMPLE_4>"""
 
 SELF_REFLECTION_EXAMPLES = f"""

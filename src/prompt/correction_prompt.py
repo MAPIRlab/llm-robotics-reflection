@@ -5,7 +5,11 @@ from prompt.prompt import Prompt
 EXAMPLE_1 = """
 <EXAMPLE_1>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[2.0,3.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":100,"results":{"book":80}},"obj2":{"bbox":{"center":[2.0,3.0,0.0],"size":[2.0,1.0,0.5]},"n_observations":50,"results":{"dining table":50}},"obj3":{"bbox":{"center":[5.0,5.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":80,"results":{"chair":70}},"obj4":{"bbox":{"center":[4.0,4.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":90,"results":{"book":85}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[2.0,3.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":100,"results":{"book":80}},
+"obj2":{"bbox":{"center":[2.0,3.0,0.0],"size":[2.0,1.0,0.5]},"n_observations":50,"results":{"dining table":50}},
+"obj3":{"bbox":{"center":[5.0,5.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":80,"results":{"chair":70}},
+"obj4":{"bbox":{"center":[4.0,4.0,0.5],"size":[0.5,0.5,0.2]},"n_observations":90,"results":{"book":85}}}}
 </SEMANTIC_MAP>
 
 <PRELIMINARY_RESPONSE>
@@ -24,7 +28,6 @@ EXAMPLE_1 = """
 
 <FEEDBACK>
 1. Comments on Correctness. Score: 1/10
-- Query achievable: OK.
 - Inferred query: Partially correct. The inferred query should be more specific, as the query requested searching laptops that were on tables, not only laptops.
 - Relevant objects: Error. It is true that "obj4" is a laptop, but it is false that "obj4" is on the table, because of its bounding box center coordinates. Instead, "obj1" is a laptop with high confidence and it is located on a table ("obj2", which is classified as office desk with a high score).
 - Explanation: error. As the relevant objects are incorrectly identified, the explanation is wrong.
@@ -59,7 +62,11 @@ EXPECTED RESPONSE:
 EXAMPLE_2 = """
 <EXAMPLE_2>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[1,2,0],"size":[0.5,0.5,1]},"n_observations":100,"results":{"trash can":90}},"obj2":{"bbox":{"center":[2,2.5,0],"size":[0.8,0.8,1.2]},"n_observations":80,"results":{"toilet":85}},"obj3":{"bbox":{"center":[3,3,0],"size":[1,1,1]},"n_observations":70,"results":{"refrigerator":75}},"obj4":{"bbox":{"center":[4,4,0],"size":[0.5,0.5,0.5]},"n_observations":60,"results":{"flower":80}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0],"size":[0.5,0.5,1]},"n_observations":100,"results":{"trash can":90}},
+"obj2":{"bbox":{"center":[2,2.5,0],"size":[0.8,0.8,1.2]},"n_observations":80,"results":{"toilet":85}},
+"obj3":{"bbox":{"center":[3,3,0],"size":[1,1,1]},"n_observations":70,"results":{"refrigerator":75}},
+"obj4":{"bbox":{"center":[4,4,0],"size":[0.5,0.5,0.5]},"n_observations":60,"results":{"flower":80}}}}
 </SEMANTIC_MAP>
 
 <PRELIMINARY_RESPONSE>
@@ -108,7 +115,11 @@ EXPECTED RESPONSE:
 EXAMPLE_3 = """
 <EXAMPLE_3>
 <SEMANTIC_MAP>
-{"instances":{"obj1":{"bbox":{"center":[1,1,0],"size":[1,0.5,0.5]},"n_observations":100,"results":{"desk":95}},"obj2":{"bbox":{"center":[2,2,0],"size":[0.5,0.5,0.5]},"n_observations":80,"results":{"laptop":90}},"obj3":{"bbox":{"center":[3,1,0.5],"size":[0.2,0.2,0.1]},"n_observations":50,"results":{"coffee mug":85}},"obj4":{"bbox":{"center":[4,3,0],"size":[0.4,0.4,0.2]},"n_observations":60,"results":{"chair":75}}}}
+{"instances":{
+"obj1":{"bbox":{"center":[1,1,0],"size":[1,0.5,0.5]},"n_observations":100,"results":{"desk":95}},
+"obj2":{"bbox":{"center":[2,2,0],"size":[0.5,0.5,0.5]},"n_observations":80,"results":{"laptop":90}},
+"obj3":{"bbox":{"center":[3,1,0.5],"size":[0.2,0.2,0.1]},"n_observations":50,"results":{"coffee mug":85}},
+"obj4":{"bbox":{"center":[4,3,0],"size":[0.4,0.4,0.2]},"n_observations":60,"results":{"chair":75}}}}
 </SEMANTIC_MAP>
 
 <PRELIMINARY_RESPONSE>
@@ -122,19 +133,15 @@ EXAMPLE_3 = """
 
 <FEEDBACK>
 1. Comments on Correctness. Score: 7/10 
-- Query achievable: Correct. 
-- Inferred query: Correct. 
 - Relevant objects: All relevant objects are identified, but they are not ordered by relevance for the query. 
 - Explanation: The explanation identifies the objects but does not justify their order based on their importance to the query.
 2. Comments on Relevance. Score: 6/10
-- Identification: Correct.
 - Sorting: Error. The objects should be ordered by their relevance for working, prioritizing essential items like the laptop and desk.
 - Details: Missing clarification on sorting criteria.
 3. Comments on Clarity. Score: 8/10
-- Clear: The explanation is understandable.
 - Ambiguities: None, apart from the lack of sorting.
 4. Actions to Improve Response:
-- Reorder the "relevant_objects" list to prioritize essential work-related objects, such as the laptop and desk, over supplementary ones. The correct order should be: 'obj2' (laptop), 'obj1' (desk), 'obj4' (chair), 'obj3' (coffee mug), as this reflects their relevance to the query.
+- Reorder the "relevant_objects" list to prioritize essential work-related objects, such as the laptop and desk, over supplementary ones. The correct order should be: obj2 (laptop), obj1 (desk), obj4 (chair), obj3 (coffee mug), as this reflects their relevance to the query.
 - Update the "explanation" to reflect the new order and justify the relevance of each object.
 </FEEDBACK>
 
@@ -143,7 +150,7 @@ EXPECTED RESPONSE:
 "inferred_query": "Identify objects needed for working.",
 "query_achievable": true,
 "relevant_objects": ["obj2", "obj1", "obj4", "obj3"],
-"explanation": "The semantic map contains several objects relevant for working. 'obj2' (laptop) is the most essential item for work, followed by 'obj1' (desk) as a workspace, 'obj4' (chair) for seating, and 'obj3' (coffee mug) as a supplementary item."
+"explanation": "The semantic map contains several objects relevant for working. obj2 (laptop) is the most essential item for work, followed by obj1 (desk) as a workspace, obj4 (chair) for seating, and obj3 (coffee mug) as a supplementary item."
 }
 </EXAMPLE_3>
 """
