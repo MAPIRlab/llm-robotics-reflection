@@ -20,13 +20,13 @@ queries:
   query_19: I want to perform my oral hygiene routine without anyone seeing me
   query_20: What can I sit on that is near a book?
   query_21: Tell me something to sit on that is not a chair
-  query_22: Find something that I can eat on that isn't the dining table
+  query_22: Find somewhere to eat other than the table
   query_23: Tell me something soft I can sit on that is not a couch
   query_24: Tell me something I can open that is not a refrigerator
   query_25: Something that is not at room temperature
-  query_26: Something that makes sounds but is not the TV, because it is turned off
+  query_26: Something that emits sound but is not the TV, because it is turned off
   query_27: Identify an object that I can safely stand on to reach a high shelf, which
     is not a chair
   query_28: Find a storage item I can use that is not a backpack or handbag
   query_29: Locate an item that provides light but isn't a table lamp
-  query_30: Something where I can pour liquids, that doesn't close?
+  query_30: Something where I can deposit liquids, that doesn't close?
