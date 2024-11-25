@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class Table1Generator:
+class TableWorkflowComparisonGenerator:
 
     def __init__(self, df_comparison_results, mode: str, llm_label: str = "Google_gemini-1.5-pro"):
         self.df = df_comparison_results.copy()
@@ -23,12 +23,12 @@ class Table1Generator:
         # Add "Query Type" columns
         self.add_query_type_column()
 
-        print(self.table_df)
+        # print(self.table_df)
 
         # Group by "Dataset", "Method" and "Query Type" columns, aggregating ComparisonResults
         self.group_by_dataset_method_and_query_type()
 
-        print(self.table_df.to_string())
+        # print(self.table_df.to_string())
 
         # Add "top_1", "top_2", "top_3", "top_any" columns from ComparisonResults
         self.add_top_k_columns()
@@ -99,13 +99,13 @@ class Table1Generator:
 
     def add_top_k_columns(self):
         self.table_df['top_1'] = self.table_df['ComparisonResult'].apply(
-            lambda x: x.get_top_1_rate())
+            lambda x: x.get_top_1_rate()*100)
         self.table_df['top_2'] = self.table_df['ComparisonResult'].apply(
-            lambda x: x.get_top_2_rate())
+            lambda x: x.get_top_2_rate()*100)
         self.table_df['top_3'] = self.table_df['ComparisonResult'].apply(
-            lambda x: x.get_top_3_rate())
+            lambda x: x.get_top_3_rate()*100)
         self.table_df['top_any'] = self.table_df['ComparisonResult'].apply(
-            lambda x: x.get_top_any_rate())
+            lambda x: x.get_top_any_rate()*100)
         self.table_df = self.table_df.drop(columns=['ComparisonResult'])
 
     def merge_base_values(self):

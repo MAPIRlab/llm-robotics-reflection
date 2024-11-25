@@ -8,17 +8,27 @@ import tqdm
 
 import constants
 from compare.comparison_result import ComparisonResult
-from results import table_1
+from results import table_workflows_comparison
 from utils import file_utils
 
 
 def load_semantic_maps_basenames():
-    semantic_map_basenames = list()
+    # semantic_map_basenames = list()
+    # for semantic_map_file in os.listdir(constants.SEMANTIC_MAPS_FOLDER_PATH):
+    #     semantic_map_basename = file_utils.get_file_basename(semantic_map_file)
+    #     semantic_map_basenames.append(semantic_map_basename)
+    # return semantic_map_basenames
+    return ["scannet_scene0000_00", "scannet_scene0101_00"]
+
+
+def load_semantic_maps_sizes():
+    semantic_map_number_objects = list()
     for semantic_map_file in os.listdir(constants.SEMANTIC_MAPS_FOLDER_PATH):
-        semantic_map_basename = file_utils.get_file_basename(semantic_map_file)
-        semantic_map_basenames.append(semantic_map_basename)
-    return semantic_map_basenames
-    # return ["scannet_scene0392_01"]
+        semantic_map_object = file_utils.load_json(os.path.join(constants.SEMANTIC_MAPS_FOLDER_PATH,
+                                                                semantic_map_file))
+        semantic_map_number_objects.append(
+            len(semantic_map_object["instances"]))
+    return semantic_map_number_objects
 
 
 def load_queries_ids():
@@ -232,9 +242,26 @@ def compute_all_comparison_results_df(all_comparison_results):
     return df
 
 
+def show_errors(semantic_map_basenames, queries_ids, all_comparison_results):
+
+    for mode in (constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY):
+        for llm in constants.LLM_PROVIDERS:
+            for semantic_map_basename in semantic_map_basenames:
+                for query_id in queries_ids:
+
+                    if all_comparison_results[mode]["base"][llm.get_provider_name()][semantic_map_basename][query_id] > all_comparison_results[mode][constants.METHOD_SELF_REFLECTION][llm.get_provider_name()][semantic_map_basename][query_id]:
+                        print(f"SELF_REFLECTION, {
+                              semantic_map_basename}/{query_id}")
+
+                    if all_comparison_results[mode]["base"][llm.get_provider_name()][semantic_map_basename][query_id] > all_comparison_results[mode][constants.METHOD_MULTIAGENT_REFLECTION][llm.get_provider_name()][semantic_map_basename][query_id]:
+                        print(f"MULTIAGENT_REFLECTION, {
+                              semantic_map_basename}/{query_id}")
+
+
 def main(args):
 
     semantic_map_basenames = load_semantic_maps_basenames()
+    semantic_map_sizes = load_semantic_maps_sizes()
     queries_ids = load_queries_ids()
 
     ai_results = load_ai_results(
@@ -249,11 +276,29 @@ def main(args):
     all_comparison_results_df = compute_all_comparison_results_df(
         all_comparison_results)
 
-    # Generate TABLE 1
-    table_1_generator = table_1.Table1Generator(
+    ###################################################
+    ################ IDENTIFY ERRORS ##################
+    ###################################################
+    # show_errors(semantic_map_basenames, queries_ids, all_comparison_results)
+
+    ###################################################
+    ########## (TABLE) WORKFLOWS COMPARISON ###########
+    ###################################################
+    table_workflows_comparison_generator = table_workflows_comparison.TableWorkflowComparisonGenerator(
         all_comparison_results_df, mode=args.mode)
-    table_1_df = table_1_generator.generate_table()
+    table_1_df = table_workflows_comparison_generator.generate_table()
     print(table_1_df.to_string(index=False))
+
+    ###################################################
+    ######## (CHART) NUMBER OF OBJECTS IMPACT #########
+    ###################################################
+    # chart_generator = chart_number_objects_impact.ChartNumberObjectsImpactGenerator(
+    #     df_comparison_results=all_comparison_results_df,
+    #     semantic_map_basenames=semantic_map_basenames,
+    #     semantic_map_sizes=semantic_map_sizes,
+    #     llm_label="Google_gemini-1.5-pro",
+    #     mode="certainty")
+    # chart_generator.generate_chart(metric='top_1')
 
 
 if __name__ == "__main__":
@@ -273,6 +318,10 @@ if __name__ == "__main__":
                         type=int,
                         help="Number of reflection iterations",
                         default=2)
+
+    parser.add_argument("-e", "--evaluation",
+                        type=str,
+                        help="Evaluation results to show")
 
     args = parser.parse_args()
 
