@@ -22,7 +22,7 @@ I need the book that is on a table
     "query_achievable": true,
     "relevant_objects": [
         {
-            "object": "obj4",
+            "object": "obj4 (book)",
             "relevance": "highly relevant"
         }
     ],
@@ -40,7 +40,7 @@ EXPECTED RESPONSE:
 - Leftovers: obj4 should not belong to the response.
 3. Comments on Clarity. Score: 7/10
 4. Actions to improve response:
-- Change "relevant_objects" to ["obj1"].
+- Change "relevant_objects" to ["obj1"]. DO NOT INCLUDE THE OBJECT CLASS IN THE LIST!
 - Update the "explanation" accordingly.
 - Adjust the JSON structure to match the required format, where "relevant_objects" is a list of object IDs as strings.
 </EXAMPLE_1>
@@ -55,7 +55,7 @@ EXAMPLE_2 = """
 "obj1":{"bbox":{"center":[1,2,0],"size":[1,1,1]},"n_observations":100,"results":{"chair":90}},
 "obj2":{"bbox":{"center":[2,2,0],"size":[2,1,1.5]},"n_observations":80,"results":{"sofa":85}},
 "obj3":{"bbox":{"center":[3,2,0],"size":[1.5,1,0.5]},"n_observations":70,"results":{"bench":75}},
-"obj4":{"bbox":{"center":[4,2,0],"size":[2,1.5,0.5]},"n_observations":60,"results":{"dining table":80}},
+"obj4":{"bbox":{"center":[4,2,0],"size":[2,1.5,0.5]},"n_observations":60,"results":{"chair":150}},
 "obj5":{"bbox":{"center":[5,2,0],"size":[1,0.5,0.5]},"n_observations":50,"results":{"stool":65}}}}
 </SEMANTIC_MAP>
 
@@ -74,20 +74,21 @@ I need to sit down while on my laptop
 
 EXPECTED RESPONSE:
 1. Comments on Correctness. Score: 4/10
-- Relevant objects: Partially correct. The objects obj1 (chair), obj2 (sofa), obj3 (bench), and obj5 (stool) are all seating options. However, for working on a laptop, obj1 and obj2 are more suitable due to comfort and ergonomics. The preliminary response includes all seating objects but doesn't prioritize them correctly.
+- Relevant objects: Partially correct. The objects  obj4 (chair), obj1 (chair), obj2 (sofa), obj3 (bench), and obj5 (stool) are all seating options. However, for working on a laptop, obj4, obj1, and obj2 are more suitable due to comfort and ergonomics. The preliminary response includes all seating objects but doesn't prioritize them correctly. Additionally, between obj4 and obj1, obj4 should be prioritized since it has greater certainty in the semantic map, 150 (obj4) compared to 90 (obj1).
 - Explanation: The explanation mentions the objects but fails to justify their relevance or prioritize them according to suitability.
 2. Comments on Relevance. Score: 3/10
 - Identification: Relevant objects are identified but not ordered by their suitability for the task.
 - Sorting: Objects are not sorted by relevance; less suitable options like obj5 (stool) and obj3 (bench) are listed before more suitable ones like obj1 (chair) and obj2 (sofa).
+- Ties: obj4 should be before obj1 because both of them are equally convenient, but obj4 presents a higher certainty.
 - Details: The response lacks details on why certain objects are more appropriate than others.
 3. Comments on Clarity. Score: 8/10
 4. Actions to Improve Response:
-- Reorder the "relevant_objects" list to prioritize the most suitable objects for working on a laptop, listing obj1 and obj2 first.
+- Reorder the "relevant_objects" list to prioritize the most suitable objects for working on a laptop, listing first obj4, then obj1 and then obj2 first.
 - Enhance the "explanation" to justify the ordering, highlighting why certain objects are more appropriate for the task.
 </EXAMPLE_2>
 """
 
-# EXAMPLE 3: functionality extension
+# EXAMPLE 3: functionality extension 1
 EXAMPLE_3 = """
 <EXAMPLE_3>
 <SEMANTIC_MAP>
@@ -130,7 +131,7 @@ EXPECTED RESPONSE:
 </EXAMPLE_3>
 """
 
-# EXAMPLE 4: requesting specific object with no responses
+# EXAMPLE 4: no response
 EXAMPLE_4 = """
 <EXAMPLE_4>
 <SEMANTIC_MAP>
@@ -161,15 +162,136 @@ EXPECTED RESPONSE:
 - Extend the explanation by mentioning that, although there are sinks on the map, there are no refrigerators, so the query is not achievable.
 </EXAMPLE_4>"""
 
+# EXAMPLE 5: functionality extension 2
+EXAMPLE_5 = """
+<EXAMPLE_5>
+<SEMANTIC_MAP>
+{"instances":{
+"obj1":{"bbox":{"center":[2,1,0.5],"size":[0.5,0.5,0.5]},"n_observations":85,"results":{"tv":90}},
+"obj2":{"bbox":{"center":[3,1,0.5],"size":[0.2,0.2,0.3]},"n_observations":134,"results":{"laptop":80}},
+"obj3":{"bbox":{"center":[5,5,0],"size":[1,1,1]},"n_observations":50,"results":{"bed":65}}}}
+</SEMANTIC_MAP>
+
+<QUERY>
+I need to see the news
+</QUERY>
+
+<PRELIMINARY_RESPONSE>
+{
+    "inferred_query": "Identify an object that can display the news",
+    "query_achievable": false,
+    "relevant_objects": [],
+    "explanation": "The objects present in the scene are not typically used for showing the news."
+}
+</PRELIMINARY_RESPONSE>
+
+EXPECTED RESPONSE:
+1. Comments on Correctness. Score: 4/10
+- Query achievable: Error, the query is achievable objects that 'may' display the news.
+- Relevant objects: Error, objects like obj1 (tv) and obj2 (laptop) are usually capable of displaying up-to-date news.
+- Explanation: Error, the explanation overlooks indirectly relevant objects that could fulfill the user's request.
+2. Comments on Relevance. Score: 5/10
+- Identification: Error. The response fails to identify objects indirectly related to the query.
+- Sorting: In this case, the order of the objects should be as follows: obj2 (laptop) and then obj1 (tv). Laptops are more convenient objects to watch the news as you can search for a news page whenever you want, while on TV the news is broadcasted at a certain time.
+- Details: Additional details on why certain objects are relevant are missing.
+3. Comments on Clarity. Score: 8/10
+4. Actions to Improve Response:
+- Change "query_achievable" to true since the task can be achieved with existing objects.
+- Include "relevant_objects": ["obj2", "obj1"], representing the trash can and the toilet. obj2 should be placed first as toilets have more probability of smelling bad than trash cans (obj1).
+- Revise the "explanation" to state that there are objects related to the function of displaying the news, obj2 (a laptop) and obj1 (a tv), and include some details.
+</EXAMPLE_5>"""
+
+# EXAMPLE 6: don't imagine objects
+EXAMPLE_6 = """
+<EXAMPLE_6>
+<SEMANTIC_MAP>
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0.5],"size":[0.6,0.6,0.8]},"n_observations":100,"results":{"washing machine":95}},
+"obj2":{"bbox":{"center":[2,3,0.5],"size":[0.6,0.6,0.8]},"n_observations":120,"results":{"washing machine":90}},
+"obj3":{"bbox":{"center":[4,5,0.3],"size":[0.4,0.4,0.5]},"n_observations":75,"results":{"chair":85}}}}
+</SEMANTIC_MAP>
+
+<QUERY>
+Where can I dry my T-shirt?
+</QUERY>
+
+<PRELIMINARY_RESPONSE>
+{
+    "inferred_query": "Identify a place to dry a T-shirt",
+    "query_achievable": true,
+    "relevant_objects": [
+        "obj1",
+        "obj2",
+        "obj3",
+    ],
+    "explanation": "While there's no dedicated 'clothesline' identified, the presence of washing machines ('obj1', 'obj2') suggests a potential clothesline location nearby. A chair (obj3) is another reasonable places to dry a T-shirt temporarily, but a clothesline would be the ideal location."
+}
+</PRELIMINARY_RESPONSE>
+
+EXPECTED RESPONSE:
+1. Comments on Correctness. Score: 6/10
+- Relevant objects: Error, there are objects marked as relevant that are not really convenient for the task at hand.
+- Explanation: Error, the explanation confuses which object is really relevant to perform the task (obj3), imagining that there will be an ideal object between two other objects in the semantic map (obj1 and obj2).
+2. Comments on Relevance. Score: 4/10
+- Sorting: In this case, you can not imagine that there will be a clothesline near two washing machines (obj1 and obj2), so they shouldn't be in the "relevant_objects" section. Instead, obj3 is a chair, where a T-shirt could be temporally placed to be dried.
+- Details: Additional details on this reasoning is needed.
+3. Comments on Clarity. Score: 7/10
+4. Actions to Improve Response:
+- Change "relevant_objects" to ["obj3"], as it is a chair where a  T-shirt could be temporally placed to be dried.
+- Revise the "explanation" to mention that between the two washing machines a clothesline could be found, without including these objects in the "relevant_objects" list, as we are not sure if a clothesline is present in the semantic map.
+</EXAMPLE_6>"""
+
+# EXAMPLE 7 = object differentiation by surroundings
+EXAMPLE_7 = """
+<EXAMPLE_7> 
+<SEMANTIC_MAP> 
+{"instances":{
+"obj1":{"bbox":{"center":[1,2,0.5],"size":[1,0.5,2]},"n_observations":80,"results":{"cabinet":95}},
+"obj2":{"bbox":{"center":[1,3,0.5],"size":[0.7,0.7,0.9]},"n_observations":60,"results":{"toilet":98}},
+"obj3":{"bbox":{"center":[5,5,0.5],"size":[1,0.5,2]},"n_observations":90,"results":{"cabinet":92}},
+"obj4":{"bbox":{"center":[5,6,0.5],"size":[1,1,2.5]},"n_observations":85,"results":{"refrigerator":97}}}}
+</SEMANTIC_MAP>
+
+<QUERY> 
+Where is the kitchen cabinet? 
+</QUERY>
+
+<PRELIMINARY_RESPONSE> 
+{
+  "inferred_query": "Locate the kitchen cabinet",
+  "query_achievable": true,
+  "relevant_objects": [
+    "obj1"
+  ],
+  "explanation": "obj1 is identified as a cabinet and is the closest match to the query."
+}
+</PRELIMINARY_RESPONSE>
+
+EXPECTED RESPONSE:
+1. Comments on Correctness. Score: 5/10
+- Relevant Objects: Error, the selected object (obj1) is near obj2 (a toilet), suggesting it's in a bathroom, not a kitchen.
+- Explanation: Error, no contextual clues were considered to correctly identify the kitchen cabinet.
+2. Comments on Relevance. Score: 4/10
+- Sorting: obj3 should have been prioritized due to its proximity to the refrigerator, which is typically found in a kitchen.
+- Details: Additional reasoning about the surrounding objects would improve accuracy.
+3. Comments on Clarity. Score: 7/10
+- Clarity: The explanation is clear but based on incorrect assumptions.
+4. Actions to Improve Response:
+- Update "relevant_objects": Change to ["obj3"] since it is adjacent to the refrigerator, indicating it is likely the kitchen cabinet.
+- Revise "explanation": Mention that obj3 is near the refrigerator, a common kitchen appliance, making it the appropriate choice.
+</EXAMPLE_7> """
+
 SELF_REFLECTION_EXAMPLES = f"""
 {EXAMPLE_1}
 {EXAMPLE_2}
-{EXAMPLE_3}
 {EXAMPLE_4}
+{EXAMPLE_5}
+{EXAMPLE_6}
+{EXAMPLE_7}
 """
 
 
-class PromptReflectAgent(Prompt):
+class PromptReflect(Prompt):
 
     SYSTEM_PROMPT = """
 <CONTEXT>
@@ -214,6 +336,13 @@ Clarity:
 - Ambiguities: Are there any ambiguities or vague descriptions?
 </EVALUATION_CRITERIA>
 
+<EVALUATION_SUGGESTIONS>
+Here are some suggestions on how to perform the feedback:
+- If the query mention specific objects in the scene, the preliminary answer should contain such objects that are present in the scene, it should not be assumed that there are objects that are not present in the map. In the same way, it should not assume that a similar object is the one that the query mentions (e.g. if the query mentions a TV, it wouldn't be correct to consider a laptop).
+- If the query requests objects to perform a task, the object response may incorporate objects that “may” be related to that task.
+- Assume that the semantic map received is the absolute truth, at no time can there be elements that have been misclassified. 
+</EVALUATION_SUGGESTIONS>
+
 <OUTPUT_FORMAT>
 Organize your response into four clearly identified sections. Sections should be identified with its number from 1 to 4 and its title.
 1. Comments on Correctness:
@@ -227,14 +356,14 @@ Provide a list of actions to modify the preliminary response in order to increas
 </OUTPUT_FORMAT>
 
 <EXAMPLES>
-Here are some examples of the process:
+Here are some examples of the process. Each example contains a false semantic map for the example, a user query, a preliminary response on that semantic map and query, and your expected response.
 {{examples}}
 </EXAMPLES>
 
-Now you will receive QUERIES and their PRELIMINARY_RESPONSES, and your task is to generate feedback on them, taking into account the SEMANTIC_MAP.
+Now you will receive QUERIES and their PRELIMINARY_RESPONSES, and your task is to generate feedback on them, taking into account the real SEMANTIC_MAP.
 
 <SEMANTIC_MAP>
-The semantic map in JSON format is the following:
+Forget about all the semantic maps you have seen so far. Those were just examples. From now on this will be the semantic map:
 {{semantic_map}}
 </SEMANTIC_MAP>
 """
@@ -288,14 +417,25 @@ Correctness:
 - JSON structure 1: Is the response a JSON object with four keys: "inferred_query", "query_achievable", "relevant_objects", and "explanation"?
 - JSON structure 2: Is the list in "relevant_objects" a String list containing only object ids like "obj1", "obj102", etc.?
 Relevance:
-- Are all relevant objects identified?
-- Are all relevant objects sorted by relevance accurately?
-- Are any crucial objects or details omitted?
-- Are there non-relevant objects in the answer, which should be omitted?
+- Identification: Are all relevant objects identified?
+- Sorting: Are all relevant objects sorted by relevance accurately?
+- Ties: In case of ties for equally convenient objects, are they ordered by certainty?
+- Details: Are any crucial objects or details omitted?
+- Leftovers: Are there non-relevant objects in the answer, which should be omitted?
 Clarity:
-- Is the response clear and easy to understand?
-- Are there any ambiguities or vague descriptions?
+- Clear: Is the response clear and easy to understand?
+- Ambiguities: Are there any ambiguities or vague descriptions?
 </EVALUATION_CRITERIA>
+
+<EVALUATION_SUGGESTIONS>
+Here are some suggestions on how to perform the feedback:
+1. If the query mention specific objects in the scene:
+- The feedback should ensure that only the objects requested by the user are in the response. The feedback should make sure that no objects are invented or imagined, since the user has requested one in question.
+- In the same way, the feedback should ensure that no objects similar or similar to those requested by the user are included. The user asked for a specific one and if it is not in the scene then the feedback should be empty.
+2. The feedback can suggest objects that “may” be related to the task, even if they are not specifically made for it.
+
+These previous rules are crucial to avoid false positives.
+</EVALUATION_SUGGESTIONS>
 
 <OUTPUT_FORMAT>
 Organize your response into four clearly identified sections. Sections should be identified with its number from 1 to 4 and its title.
@@ -310,14 +450,14 @@ Provide a score from 0 to 10 indicating the response's clarity, followed by your
 </OUTPUT_FORMAT>
 
 <EXAMPLES>
-Here are some examples of the process:
+Here are some examples of the process. Each example contains a false semantic map for the example, a user query, a preliminary response on that semantic map and query, and your expected response.
 {{examples}}
 </EXAMPLES>
 
-Now you will receive QUERIES and their PRELIMINARY_RESPONSES, and your task is to generate feedback on them, taking into account the SEMANTIC_MAP.
+Now you will receive QUERIES and their PRELIMINARY_RESPONSES, and your task is to generate feedback on them, taking into account the real SEMANTIC_MAP.
 
 <SEMANTIC_MAP>
-The semantic map in JSON format is the following:
+Forget about all the semantic maps you have seen so far. Those were just examples. From now on this will be the semantic map:
 {{semantic_map}}
 </SEMANTIC_MAP>
 """

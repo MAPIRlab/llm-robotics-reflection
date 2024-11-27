@@ -157,8 +157,6 @@ EXPECTED RESPONSE:
 
 CORRECTION_EXAMPLES = f"""
 {EXAMPLE_1}
-{EXAMPLE_2}
-{EXAMPLE_3}
 """
 
 
@@ -204,7 +202,7 @@ Note that the response must again be a JSON, with the same keys as the first LLM
 2 "query_achievable": (Boolean)
 3 "relevant_objects": (List of String)
 4 "explanation": (String)
-The response should only be a JSON object, no explanations, titles or additional information required.
+The response should ALWAYS be a JSON object, no explanation, titles or additional information required. It is very important that the response is a JSON parsable object, because your response will be directly passed to a software that should save these response as JSON.
 </OUTPUT_FORMAT>
 
 <EXAMPLES>
@@ -212,7 +210,7 @@ Here are some examples of the process:
 {{examples}}
 </EXAMPLES>
 
-Now you will receive PRELIMINARY_RESPONSES and their FEEDBACK, and your task is to correct the preliminary response and generate a new response based on the feedback.
+Now you will receive a PRELIMINARY_RESPONSE and its FEEDBACK, and your task is to follow the step indicated in the feedback and correct the preliminary response by generating another one.
 
 <SEMANTIC_MAP>
 {{semantic_map}}
@@ -275,6 +273,7 @@ Note that the response must again be a JSON, with the same keys as the first LLM
 3 "relevant_objects": (List of String)
 4 "explanation": (String)
 The response should only be a JSON object, no explanations, titles or additional information required.
+The response should ALWAYS be a JSON object, no explanation, titles or additional information required. It is very important that the response is a JSON parsable object, because your response will be directly passed to a software that should save these response as JSON.
 </OUTPUT_FORMAT>
 
 <EXAMPLES>
