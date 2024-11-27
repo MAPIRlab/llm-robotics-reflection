@@ -32,7 +32,7 @@ class ChartNumberObjectsImpactGenerator:
 
         print(df_filtered.to_string())
 
-        # Group by Method and SemanticMap, aggregating ComparisonResults
+        # Group by Method, SemanticMap, and SemanticMapSize
         df_grouped = df_filtered.groupby(['Method', 'SemanticMap', 'SemanticMapSize']).agg({
             "ComparisonResult": "sum"
         }).reset_index()
@@ -50,27 +50,37 @@ class ChartNumberObjectsImpactGenerator:
         # Select the desired metric
         df_grouped['MetricValue'] = df_grouped[metric]
 
-        # Pivot the DataFrame to have methods as columns
-        df_pivot = df_grouped.pivot_table(
-            index='SemanticMapSize', columns='Method', values='MetricValue')
-
-        # Sort the DataFrame by SemanticMapSize
-        df_pivot = df_pivot.sort_index()
+        # Create labels combining SemanticMap and Size
+        df_grouped['SemanticMapLabel'] = df_grouped.apply(
+            lambda row: f"{row['SemanticMap']} ({row['SemanticMapSize']})", axis=1)
 
         # Plot the data
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(12, 6))
 
         methods = [METHOD_BASE, METHOD_SELF_REFLECTION,
                    METHOD_MULTIAGENT_REFLECTION, METHOD_ENSEMBLING]
 
         for method in methods:
-            if method in df_pivot.columns:
-                plt.plot(df_pivot.index,
-                         df_pivot[method], marker='o', label=method)
+            method_df = df_grouped[df_grouped['Method'] == method]
+            if not method_df.empty:
+                x_coords = method_df['SemanticMapSize']
+                y_coords = method_df['MetricValue']
+                plt.scatter(x_coords, y_coords, marker='o', label=method)
+
+        # Get unique SemanticMapSizes and their corresponding labels
+        unique_sizes_labels = df_grouped[[
+            'SemanticMapSize', 'SemanticMapLabel']].drop_duplicates().sort_values('SemanticMapSize')
+
+        x_ticks = unique_sizes_labels['SemanticMapSize']
+        x_labels = unique_sizes_labels['SemanticMapLabel']
 
         plt.xlabel('Semantic Map Size (Number of Objects)')
         plt.ylabel(f'{metric.replace("_", " ").capitalize()} Rate (%)')
-        plt.title('ComparisonResult vs. Semantic Map Size')
+        plt.title('Comparison Result vs. Semantic Map Size')
+
+        # Set x-ticks at the semantic map sizes with custom labels
+        plt.xticks(x_ticks, x_labels, rotation=45, ha='right')
         plt.legend()
         plt.grid(True)
+        plt.tight_layout()
         plt.show()
