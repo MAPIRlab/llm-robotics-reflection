@@ -15,7 +15,11 @@ from prompt.correction_prompt import (
     PromptCorrectUser,
 )
 from prompt.planner_prompt import PromptPlan, PromptPlanAgent, PromptPlanUser
-from prompt.self_reflection_prompt import PromptReflectAgent, PromptReflectUser
+from prompt.self_reflection_prompt import (
+    PromptReflect,
+    PromptReflectAgent,
+    PromptReflectUser,
+)
 from utils import file_utils, text_utils
 from voxelad import preprocess
 
@@ -112,8 +116,8 @@ def plan_self_reflection(mode: str, semantic_map: list, llm_provider: LargeLangu
         # Initial plan is response to be refined
         response_to_be_refined = plan_response
 
-        # Set reflection and correction first prompts *user()
-        self_reflection_conversation_history.append_user_message(PromptReflectAgent(
+        # Set reflection and correction first prompts (user)
+        self_reflection_conversation_history.append_user_message(PromptReflect(
             semantic_map=semantic_map_object_str).get_prompt_text())
         correction_conversation_history.append_user_message(PromptCorrect(
             semantic_map=semantic_map_object_str).get_prompt_text())
@@ -506,7 +510,9 @@ if __name__ == "__main__":
     parser.add_argument("--mode",
                         type=str,
                         help="TODO",  # TODO
-                        choices=[constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY])
+                        choices=[constants.MODE_CERTAINTY,
+                                 constants.MODE_UNCERTAINTY],
+                        default=constants.MODE_CERTAINTY)
 
     parser.add_argument("--method",
                         type=str,
