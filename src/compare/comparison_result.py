@@ -27,6 +27,36 @@ class ComparisonResult:
             n_samples=self.n_samples + other.n_samples
         )
 
+    def __lt__(self, other):
+        """
+        Less-than comparison for ComparisonResult objects.
+        Prioritizes top_1_rate, then top_2_rate, top_3_rate, and top_any_rate.
+        """
+        if not isinstance(other, ComparisonResult):
+            return NotImplemented
+
+        # Compare rates in order of importance
+        return (
+            (self.get_top_1_rate(), self.get_top_2_rate(),
+             self.get_top_3_rate(), self.get_top_any_rate())
+            < (other.get_top_1_rate(), other.get_top_2_rate(), other.get_top_3_rate(), other.get_top_any_rate())
+        )
+
+    def __gt__(self, other):
+        """
+        Greater-than comparison for ComparisonResult objects.
+        Prioritizes top_1_rate, then top_2_rate, top_3_rate, and top_any_rate.
+        """
+        if not isinstance(other, ComparisonResult):
+            return NotImplemented
+
+        # Compare rates in order of importance
+        return (
+            (self.get_top_1_rate(), self.get_top_2_rate(),
+             self.get_top_3_rate(), self.get_top_any_rate())
+            > (other.get_top_1_rate(), other.get_top_2_rate(), other.get_top_3_rate(), other.get_top_any_rate())
+        )
+
     def __repr__(self):
         return (f"ComparisonResult(top_1={self.top_1}, "
                 f"top_2={self.top_2}, "

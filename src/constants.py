@@ -35,6 +35,10 @@ METHOD_ENSEMBLING = "ensembling"
 LLM_GEMINI_1_0_PRO = "g10p"
 LLM_GEMINI_1_5_PRO = "g15p"
 
+EVALUATION_TABLE_WORKFLOWS = "table_workflows"
+EVALUATION_CHART_SIZES = "chart_sizes"
+EVALUATION_REFLECTION_ERRORS = "reflection_errors"
+
 # LLM models
 GEMINI_1_0_PRO = GoogleGeminiProvider(credentials_file=GOOGLE_GEMINI_CREDENTIALS_FILENAME,
                                       project_id=GOOGLE_GEMINI_PROJECT_ID,
