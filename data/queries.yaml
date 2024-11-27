@@ -21,7 +21,7 @@ queries:
   query_20: What can I sit on that is near a book?
   query_21: Tell me something to sit on that is not a chair
   query_22: Find somewhere to eat other than the table
-  query_23: Tell me something soft I can sit on that is not a couch
+  query_23: Tell me something I can sit on that is not a couch
   query_24: Tell me something I can open that is not a refrigerator
   query_25: Something that is not at room temperature
   query_26: Something that emits sound but is not the TV, because it is turned off
