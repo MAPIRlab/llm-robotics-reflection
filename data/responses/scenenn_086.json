@@ -31,6 +31,13 @@
         "query_10": [],
         "query_11": [],
         "query_12": [
+            "obj14",
+            "obj28",
+            "obj78",
+            "obj81",
+            "obj97",
+            "obj99",
+            "obj102",
             "obj12",
             "obj36"
         ],
@@ -57,7 +64,14 @@
             "obj69",
             "obj12"
         ],
-        "query_21": [],
+        "query_21": [
+            "obj28",
+            "obj97",
+            "obj78",
+            "obj105",
+            "obj81",
+            "obj14"
+        ],
         "query_22": [
             "obj36",
             "obj69",
