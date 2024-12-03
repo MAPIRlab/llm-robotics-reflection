@@ -8,7 +8,7 @@ import tqdm
 
 import constants
 from compare.comparison_result import ComparisonResult
-from results import chart_number_objects_impact, table_workflows_comparison
+from results import chart_semantic_map_complexity, table_workflows_comparison
 from utils import file_utils
 
 
@@ -316,7 +316,7 @@ def main(args):
     ######## (CHART) NUMBER OF OBJECTS IMPACT #########
     ###################################################
     if args.evaluation == constants.EVALUATION_CHART_SIZES:
-        chart_generator = chart_number_objects_impact.ChartNumberObjectsImpactGenerator(
+        chart_generator = chart_semantic_map_complexity.ChartSemanticMapComplexityGenerator(
             df_comparison_results=all_comparison_results_df,
             semantic_map_basenames=semantic_map_basenames,
             semantic_map_sizes=semantic_map_sizes,
