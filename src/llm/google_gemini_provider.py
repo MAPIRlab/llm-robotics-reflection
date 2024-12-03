@@ -1,4 +1,5 @@
 
+
 import google.cloud.aiplatform as aiplatform
 import google.oauth2.service_account
 from vertexai.preview.generative_models import GenerativeModel
@@ -47,13 +48,16 @@ class GoogleGeminiProvider(LargeLanguageModel):
 
         # print("#"*100)
         # print(f"system_instruction = {system_instruction}")
-        # print(f"len(contents) = {len(contents)}")
+        # print(f"contents = {contents}")
 
         # Get response
         response = model.generate_content(contents)
 
         response_text = response.candidates[0].content.parts[0].text
-        # print("RESPONSE")
-        # print(response_text)
+        print("RESPONSE")
+        print(response_text)
+        print("#"*100)
+
+        # time.sleep(7)
 
         return response_text

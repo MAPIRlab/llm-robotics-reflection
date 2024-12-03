@@ -373,8 +373,7 @@ def plan_ensembling(mode: str, semantic_map, chooser_llm_provider: LargeLanguage
         plan_responses = list()
 
         # Create N LLMs
-        planner_llms = [constants.GEMINI_1_0_PRO, constants.GEMINI_1_0_PRO, constants.GEMINI_1_0_PRO,
-                        constants.GEMINI_1_5_PRO, constants.GEMINI_1_5_PRO, constants.GEMINI_1_5_PRO]
+        planner_llms = [chooser_llm_provider] * 6
         planner_llms_labels = [f"{llm_provider.get_provider_name(
         )}_{llm_index}" for llm_index, llm_provider in enumerate(planner_llms)]
 

@@ -125,7 +125,7 @@ def load_ai_results(reflection_iterations: int, semantic_map_basenames: list, qu
                             # print(f"Skipped answer: {
                             #       mode}\\{method}\\{llm.get_provider_name()}\\{semantic_map_basename}\\{query_id}: {e}")
                             data[mode][method][llm.get_provider_name(
-                            )][semantic_map_basename][query_id] = []
+                            )][semantic_map_basename][query_id] = None
                             n_not_loaded_responses += 1
 
     if n_not_loaded_responses != 0:
@@ -156,11 +156,14 @@ def load_human_results(semantic_map_basenames: list):
 
 def compare_human_ai_results(ai_result, human_result):
 
-    if len(ai_result) == 0 and len(human_result) == 0:  # ai empty, human empty
+    if human_result is None or not isinstance(human_result, list):
+        raise ValueError("Human result is not in the correct format")
+    elif ai_result is None or not isinstance(ai_result, list):
+        return ComparisonResult.no_hit()
+    elif len(ai_result) == 0 and len(human_result) == 0:  # ai empty, human empty
         return ComparisonResult.top_1_hit()
     elif len(ai_result) == 0 and len(human_result) != 0:  # ai empty, human not empty
         return ComparisonResult.no_hit()
-
     elif len(ai_result) >= 1 and ai_result[0] in human_result:
         return ComparisonResult.top_1_hit()
     elif len(ai_result) >= 2 and ai_result[1] in human_result:
@@ -319,7 +322,7 @@ def main(args):
             semantic_map_sizes=semantic_map_sizes,
             llm_label="Google_gemini-1.5-pro",
             mode="certainty")
-        chart_generator.generate_chart(metric='top_1')
+        chart_generator.generate_chart(metric='top_any')
 
 
 if __name__ == "__main__":
@@ -336,6 +339,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-n", "--number-maps",
                         type=int,
+                        default=10,
                         help="TODO")  # TODO
 
     parser.add_argument("--mode",
