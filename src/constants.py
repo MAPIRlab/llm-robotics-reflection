@@ -37,8 +37,35 @@ METHODS = [METHOD_BASE, METHOD_SELF_REFLECTION,
 LLM_GEMINI_1_0_PRO = "g10p"
 LLM_GEMINI_1_5_PRO = "g15p"
 
+
+def get_llm_provider_name_from_constant(constant_value: str):
+    if constant_value == LLM_GEMINI_1_0_PRO:
+        return "Google_gemini-1.0-pro"
+    elif constant_value == LLM_GEMINI_1_5_PRO:
+        return "Google_gemini-1.5-pro"
+    else:
+        raise ValueError(f"Constant value {constant_value} not known")
+
+
+METRIC_TOP_1 = "top_1"
+METRIC_TOP_2 = "top_2"
+METRIC_TOP_3 = "top_3"
+METRIC_TOP_ANY = "top_any"
+
+
+def pretty_metric_constant(metric: str):
+    if metric == METRIC_TOP_1:
+        return "Top-1"
+    elif metric == METRIC_TOP_2:
+        return "Top-2"
+    elif metric == METRIC_TOP_3:
+        return "Top-3"
+    elif metric == METRIC_TOP_ANY:
+        return "Top-Any"
+
+
 EVALUATION_TABLE_WORKFLOWS = "table_workflows"
-EVALUATION_CHART_SIZES = "chart_sizes"
+EVALUATION_CHART_COMPLEXITY = "chart_complexity"
 EVALUATION_REFLECTION_ERRORS = "reflection_errors"
 
 # LLM models

@@ -263,11 +263,11 @@ def show_reflection_errors(semantic_map_basenames, queries_ids, all_comparison_r
 
                     if base_cr > self_reflection_cr:
                         self_reflection_errors.append(
-                            f"{semantic_map_basename}/{query_id}")
+                            f"{llm.get_provider_name()}/{semantic_map_basename}/{query_id}")
 
                     if base_cr > multiagent_reflection_cr:
                         multiagent_reflection_errors.append(
-                            f"{semantic_map_basename}/{query_id}")
+                            f"{llm.get_provider_name()}/{semantic_map_basename}/{query_id}")
 
     print(f"SELF_REFLECTION made {len(self_reflection_errors)} errors")
     for error in self_reflection_errors:
@@ -301,55 +301,72 @@ def main(args):
     ###################################################
     if args.evaluation == constants.EVALUATION_REFLECTION_ERRORS:
         show_reflection_errors(semantic_map_basenames,
-                               queries_ids, all_comparison_results)
+                               queries_ids, all_comparison_results, ai_results)
 
     ###################################################
     ########## (TABLE) WORKFLOWS COMPARISON ###########
     ###################################################
     if args.evaluation == constants.EVALUATION_TABLE_WORKFLOWS:
         table_workflows_comparison_generator = table_workflows_comparison.TableWorkflowComparisonGenerator(
-            all_comparison_results_df, mode=args.mode)
+            all_comparison_results_df, mode=args.mode, llm_label=constants.get_llm_provider_name_from_constant(args.llm))
         table_1_df = table_workflows_comparison_generator.generate_table()
         print(table_1_df.to_string(index=False))
 
     ###################################################
     ######## (CHART) NUMBER OF OBJECTS IMPACT #########
     ###################################################
-    if args.evaluation == constants.EVALUATION_CHART_SIZES:
+    if args.evaluation == constants.EVALUATION_CHART_COMPLEXITY:
         chart_generator = chart_semantic_map_complexity.ChartSemanticMapComplexityGenerator(
-            df_comparison_results=all_comparison_results_df,
+            all_comparison_results_df=all_comparison_results_df,
             semantic_map_basenames=semantic_map_basenames,
             semantic_map_sizes=semantic_map_sizes,
-            llm_label="Google_gemini-1.5-pro",
-            mode="certainty")
-        chart_generator.generate_chart(metric='top_any')
+            llm_provider_name=constants.get_llm_provider_name_from_constant(
+                args.llm),
+            mode=args.mode)
+        chart_generator.generate_chart(metric=args.metric)
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script for evaluating the results")  # TODO
+        description="Script for getting the different results presented in the paper")
 
     parser.add_argument("-e", "--evaluation",
+                        help="Evaluation result that should be shown",
                         type=str,
-                        help="Evaluation results to show",
                         choices=[constants.EVALUATION_TABLE_WORKFLOWS,
-                                 constants.EVALUATION_CHART_SIZES, constants.EVALUATION_REFLECTION_ERRORS],
+                                 constants.EVALUATION_CHART_COMPLEXITY, constants.EVALUATION_REFLECTION_ERRORS],
                         required=True)
 
     parser.add_argument("-n", "--number-maps",
+                        help="Number of semantic maps to be evaluated",
                         type=int,
-                        default=10,
-                        help="TODO")  # TODO
+                        default=10)
 
     parser.add_argument("--mode",
+                        help="Semantic maps input mode to LLMs, with uncertainty (uncertainty) or not (certainty)",
                         type=str,
-                        help="TODO",  # TODO
                         choices=[constants.MODE_CERTAINTY,
                                  constants.MODE_UNCERTAINTY],
-                        default="certainty")
+                        default=constants.MODE_CERTAINTY)
 
-    # (only for METHODs self_reflection and multiagent_reflection)
+    # only for EVALUATIONs table_workflows and chart_complexity
+    parser.add_argument("-l", "--llm",
+                        help="Which LLM to evaluates: g10p -> Gemini 1.0 Pro; g15p -> Gemini 1.5 Pro",
+                        type=str,
+                        choices=[constants.LLM_GEMINI_1_0_PRO,
+                                 constants.LLM_GEMINI_1_5_PRO],
+                        required=True)
+
+    # only for EVALUATION chart_complexity
+    parser.add_argument("-m", "--metric",
+                        help="Metric to consider in the performance vs complexity chart",
+                        type=str,
+                        choices=[constants.METRIC_TOP_1, constants.METRIC_TOP_2,
+                                 constants.METRIC_TOP_3, constants.METRIC_TOP_ANY],
+                        default=constants.METRIC_TOP_ANY)
+
+    # only for METHODs self_reflection and multiagent_reflection
     parser.add_argument("-i", "--reflection-iterations",
                         type=int,
                         help="Number of reflection iterations",

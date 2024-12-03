@@ -503,12 +503,13 @@ if __name__ == "__main__":
         description="TODO")  # TODO
 
     parser.add_argument("-n", "--number-maps",
+                        help="Number of semantic maps to be processed by the pipeline",
                         type=int,
-                        help="TODO")  # TODO
+                        default=10)
 
     parser.add_argument("--mode",
+                        help="Semantic maps input mode to LLMs, with uncertainty (uncertainty) or not (certainty)",
                         type=str,
-                        help="TODO",  # TODO
                         choices=[constants.MODE_CERTAINTY,
                                  constants.MODE_UNCERTAINTY],
                         default=constants.MODE_CERTAINTY)
@@ -527,8 +528,8 @@ if __name__ == "__main__":
 
     # (only for METHODs self_reflection and multiagent_reflection)
     parser.add_argument("-i", "--reflection-iterations",
-                        type=int,
                         help="Number of reflection iterations",
+                        type=int,
                         default=2)
 
     args = parser.parse_args()
