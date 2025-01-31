@@ -30,9 +30,9 @@ MODE_UNCERTAINTY = "uncertainty"
 METHOD_BASE = "base"
 METHOD_SELF_REFLECTION = "self_reflection"
 METHOD_MULTIAGENT_REFLECTION = "multiagent_reflection"
-METHOD_ENSEMBLING = "ensembling"
+METHOD_ENSEMBLE = "ensemble"
 METHODS = [METHOD_BASE, METHOD_SELF_REFLECTION,
-           METHOD_MULTIAGENT_REFLECTION, METHOD_ENSEMBLING]
+           METHOD_MULTIAGENT_REFLECTION, METHOD_ENSEMBLE]
 
 LLM_GEMINI_1_0_PRO = "g10p"
 LLM_GEMINI_1_5_PRO = "g15p"
@@ -65,6 +65,7 @@ def pretty_metric_constant(metric: str):
 
 
 EVALUATION_TABLE_WORKFLOWS = "table_workflows"
+EVALUATION_TABLE_WORKFLOWS_GENERAL = "table_workflows_general"
 EVALUATION_CHART_COMPLEXITY = "chart_complexity"
 EVALUATION_REFLECTION_ERRORS = "reflection_errors"
 

@@ -54,9 +54,9 @@ class GoogleGeminiProvider(LargeLanguageModel):
         response = model.generate_content(contents)
 
         response_text = response.candidates[0].content.parts[0].text
-        print("RESPONSE")
-        print(response_text)
-        print("#"*100)
+        # print("RESPONSE")
+        # print(response_text)
+        # print("#"*100)
 
         # time.sleep(7)
 

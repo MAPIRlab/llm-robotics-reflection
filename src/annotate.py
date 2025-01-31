@@ -22,7 +22,7 @@ class GUI(tk.Tk):
         self.ground_truth_file_path = None
         self.queries_file_path = None
 
-        self.title("Semantic Map and Human Data Interface")
+        self.title("Semantic Map and Ground Truth Interface")
         self.geometry("1200x800")
 
         # Paned Window Setup
@@ -55,12 +55,12 @@ class GUI(tk.Tk):
         self.semantic_map_tree.pack(
             padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Right Frame (Human Data)
+        # Right Frame (Ground truth)
         right_frame = tk.Frame(paned_window, bg='lightyellow')
         paned_window.add(right_frame)
-        tk.Label(right_frame, text="Human data", font=(
+        tk.Label(right_frame, text="Ground truth", font=(
             "Arial", 12, "bold")).pack(pady=10)
-        tk.Button(right_frame, text="Load query YAML file",
+        tk.Button(right_frame, text="Load queries YAML file",
                   command=self.load_query_file).pack(pady=5)
         tk.Button(right_frame, text="Load ground truth JSON file",
                   command=self.load_ground_truth_file).pack(pady=5)
@@ -82,7 +82,7 @@ class GUI(tk.Tk):
             "<<TreeviewSelect>>", self.highlight_semantic_map_objects)
         self.human_data_tree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
         tk.Button(right_frame, text="Clear", command=self.clear_queries_and_ground_truth,
-                  bg="red", fg="white").pack(pady=5)
+                  bg="orange", fg="white").pack(pady=5)
 
     def clear_treeview(self, treeview):
         treeview.delete(*treeview.get_children())

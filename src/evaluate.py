@@ -9,6 +9,9 @@ import tqdm
 import constants
 from compare.comparison_result import ComparisonResult
 from results import chart_semantic_map_complexity, table_workflows_comparison
+from results.table_workflows_general_comparison import (
+    TableWorkflowsGeneralComparisonGenerator,
+)
 from utils import file_utils
 
 
@@ -47,7 +50,7 @@ def load_ai_results(reflection_iterations: int, semantic_map_basenames: list, qu
                           desc="Loading AI results..."):
         data[mode] = dict()
 
-        for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING):
+        for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLE):
             data[mode][method] = dict()
 
             for llm in constants.LLM_PROVIDERS:
@@ -75,7 +78,7 @@ def load_ai_results(reflection_iterations: int, semantic_map_basenames: list, qu
                                 final_plan_file_path = os.path.join(query_results_folder_path,
                                                                     f"plan_{reflection_iterations}.json")
 
-                            elif method == constants.METHOD_ENSEMBLING:
+                            elif method == constants.METHOD_ENSEMBLE:
                                 # Get choice
                                 choice_file_paths = file_utils.find_matching_files(
                                     query_results_folder_path, r"choice_\d+\.json")
@@ -186,7 +189,7 @@ def compute_all_comparison_results(semantic_map_basenames: list, queries_ids: li
     for mode in (constants.MODE_CERTAINTY, constants.MODE_UNCERTAINTY):
         all_comparison_results[mode] = dict()
 
-        for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING):
+        for method in (constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLE):
             all_comparison_results[mode][method] = dict()
 
             for llm in constants.LLM_PROVIDERS:
@@ -313,6 +316,15 @@ def main(args):
         print(table_1_df.to_string(index=False))
 
     ###################################################
+    ###### (TABLE) WORKFLOWS GENERAL COMPARISON #######
+    ###################################################
+    if args.evaluation == constants.EVALUATION_TABLE_WORKFLOWS_GENERAL:
+        generator = TableWorkflowsGeneralComparisonGenerator(
+            all_comparison_results_df, mode=args.mode, llm_label=constants.get_llm_provider_name_from_constant(args.llm))
+        table_df = generator.generate_table()
+        print(table_df.to_string(index=False))
+
+    ###################################################
     ######## (CHART) NUMBER OF OBJECTS IMPACT #########
     ###################################################
     if args.evaluation == constants.EVALUATION_CHART_COMPLEXITY:
@@ -335,7 +347,8 @@ if __name__ == "__main__":
                         help="Evaluation result that should be shown",
                         type=str,
                         choices=[constants.EVALUATION_TABLE_WORKFLOWS,
-                                 constants.EVALUATION_CHART_COMPLEXITY, constants.EVALUATION_REFLECTION_ERRORS],
+                                 constants.EVALUATION_CHART_COMPLEXITY, constants.EVALUATION_REFLECTION_ERRORS,
+                                 constants.EVALUATION_TABLE_WORKFLOWS_GENERAL],
                         required=True)
 
     parser.add_argument("-n", "--number-maps",

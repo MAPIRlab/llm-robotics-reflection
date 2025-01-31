@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import time
 
 import tqdm
 
@@ -396,7 +397,7 @@ def plan_ensembling(mode: str, semantic_map, chooser_llm_provider: LargeLanguage
             # Get response
             plan_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                    mode,
-                                                   constants.METHOD_ENSEMBLING,
+                                                   constants.METHOD_ENSEMBLE,
                                                    chooser_llm_provider.get_provider_name(),
                                                    semantic_map_basename,
                                                    query_id,
@@ -427,7 +428,7 @@ def plan_ensembling(mode: str, semantic_map, chooser_llm_provider: LargeLanguage
 
         choice_response_file_path = os.path.join(constants.LLM_RESULTS_FOLDER_PATH,
                                                  mode,
-                                                 constants.METHOD_ENSEMBLING,
+                                                 constants.METHOD_ENSEMBLE,
                                                  chooser_llm_provider.get_provider_name(),
                                                  semantic_map_basename,
                                                  str(query_id),
@@ -447,6 +448,25 @@ def plan_ensembling(mode: str, semantic_map, chooser_llm_provider: LargeLanguage
             # Save response
             file_utils.save_json_str_to_file(json_str=choice_response,
                                              output_path=choice_response_file_path)
+
+
+def print_time_statistics(start_time: float, end_time: float, method: str, number_queries: int, reflection_iterations: int):
+
+    execution_time = end_time - start_time
+    number_llm_calls = 0
+
+    if method == constants.METHOD_BASE:
+        number_llm_calls = number_queries
+    elif method == constants.METHOD_SELF_REFLECTION:
+        number_llm_calls = number_queries * (1 + 2 * reflection_iterations)
+    elif method == constants.METHOD_MULTIAGENT_REFLECTION:
+        number_llm_calls = number_queries * (1 + 2 * reflection_iterations)
+    elif method == constants.METHOD_ENSEMBLE:
+        number_llm_calls = number_queries * 7
+
+    print(f"Evaluation took {execution_time} s")
+    print(f"During evaluation {number_llm_calls} calls were executed, {
+          execution_time/number_llm_calls} s/call")
 
 
 def main(args):
@@ -478,6 +498,7 @@ def main(args):
     # MAIN LOOP
     for (s_m_b, s_m_o) in semantic_maps[:args.number_maps]:
 
+        start_time = time.time()
         # Pre-process semantic map
         pre_processed_semantic_map = (s_m_b, preprocess.preprocess_semantic_map(s_m_o,
                                                                                 class_uncertainty=(args.mode == constants.MODE_UNCERTAINTY)))
@@ -492,9 +513,16 @@ def main(args):
         elif args.method == constants.METHOD_MULTIAGENT_REFLECTION:
             plan_multiagent_reflection(
                 args.mode, pre_processed_semantic_map, llm_provider, queries, args.reflection_iterations)
-        elif args.method == constants.METHOD_ENSEMBLING:
+        elif args.method == constants.METHOD_ENSEMBLE:
             plan_ensembling(args.mode, pre_processed_semantic_map,
                             llm_provider, queries)
+
+        end_time = time.time()
+
+        print_time_statistics(start_time, end_time,
+                              number_queries=len(queries),
+                              method=args.method,
+                              reflection_iterations=args.reflection_iterations)
 
 
 if __name__ == "__main__":
@@ -517,7 +545,7 @@ if __name__ == "__main__":
     parser.add_argument("--method",
                         type=str,
                         help="Which models from the ones tested to use",
-                        choices=[constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLING])
+                        choices=[constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLE])
 
     # in METHODS base, self_reflection and multiagent_reflection represents the main LLM
     # in METHOD ensembling represents the chooser LLM

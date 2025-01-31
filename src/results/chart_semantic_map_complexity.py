@@ -4,7 +4,7 @@ import numpy as np
 import constants
 from constants import (
     METHOD_BASE,
-    METHOD_ENSEMBLING,
+    METHOD_ENSEMBLE,
     METHOD_MULTIAGENT_REFLECTION,
     METHOD_SELF_REFLECTION,
 )
@@ -132,13 +132,13 @@ class ChartSemanticMapComplexityGenerator:
             METHOD_BASE: 'blue',
             METHOD_SELF_REFLECTION: 'orange',
             METHOD_MULTIAGENT_REFLECTION: 'green',
-            METHOD_ENSEMBLING: 'red',
+            METHOD_ENSEMBLE: 'red',
         }
         offsets = {
             METHOD_BASE: -0.3,
             METHOD_SELF_REFLECTION: -0.15,
             METHOD_MULTIAGENT_REFLECTION: 0.15,
-            METHOD_ENSEMBLING: 0.3,
+            METHOD_ENSEMBLE: 0.3,
         }
 
         # Store method data for trend lines
