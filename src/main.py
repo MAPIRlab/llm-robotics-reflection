@@ -531,12 +531,12 @@ if __name__ == "__main__":
         description="Uses one of the presented methods to perform object-centered planning for a set of queries on a set of semantic maps, using a specific LLM")
 
     parser.add_argument("-n", "--number-maps",
-                        help="Number of semantic maps to be processed by the pipeline",
+                        help="Number of semantic maps on which the queries will be evaluated using a specific agentic workflow to obtain responses. Semantic maps are processed in alphabetical order.",
                         type=int,
                         default=10)
 
     parser.add_argument("--mode",
-                        help="Semantic maps input mode to LLMs, with uncertainty (uncertainty) or not (certainty)",
+                        help="Semantic maps input mode to LLMs, with uncertainty or not.",
                         type=str,
                         choices=[constants.MODE_CERTAINTY,
                                  constants.MODE_UNCERTAINTY],
@@ -544,17 +544,17 @@ if __name__ == "__main__":
 
     parser.add_argument("--method",
                         type=str,
-                        help="Which models from the ones tested to use",
+                        help="Which agentic workflow to execute?",
                         choices=[constants.METHOD_BASE, constants.METHOD_SELF_REFLECTION, constants.METHOD_MULTIAGENT_REFLECTION, constants.METHOD_ENSEMBLE])
 
     # in METHODS base, self_reflection and multiagent_reflection represents the main LLM
     # in METHOD ensembling represents the chooser LLM
     parser.add_argument("-l", "--llm",
                         type=str,
-                        help="Which LLM to use: g10p -> Gemini 1.0 Pro; g15p -> Gemini 1.5 Pro",
+                        help="Which LLM to use in the workflow?",
                         choices=[constants.LLM_GEMINI_1_0_PRO, constants.LLM_GEMINI_1_5_PRO])
 
-    # (only for METHODs self_reflection and multiagent_reflection)
+    # only for METHODs self_reflection and multiagent_reflection
     parser.add_argument("-i", "--reflection-iterations",
                         help="Number of reflection iterations",
                         type=int,

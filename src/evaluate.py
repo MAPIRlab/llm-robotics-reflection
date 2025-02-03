@@ -344,7 +344,7 @@ if __name__ == "__main__":
         description="Script for getting the different results presented in the paper")
 
     parser.add_argument("-e", "--evaluation",
-                        help="Evaluation result that should be shown",
+                        help="Evaluation result to show (e.g. table of workflows comparison, chart with performance depending on number of objects...).",
                         type=str,
                         choices=[constants.EVALUATION_TABLE_WORKFLOWS,
                                  constants.EVALUATION_CHART_COMPLEXITY, constants.EVALUATION_REFLECTION_ERRORS,
@@ -352,12 +352,12 @@ if __name__ == "__main__":
                         required=True)
 
     parser.add_argument("-n", "--number-maps",
-                        help="Number of semantic maps to be evaluated",
+                        help="Number of semantic maps whose responses will be evaluated. Semantic maps are processed in alphabetical order.",
                         type=int,
                         default=10)
 
     parser.add_argument("--mode",
-                        help="Semantic maps input mode to LLMs, with uncertainty (uncertainty) or not (certainty)",
+                        help="Semantic maps input mode to LLMs, with uncertainty or not.",
                         type=str,
                         choices=[constants.MODE_CERTAINTY,
                                  constants.MODE_UNCERTAINTY],
@@ -365,7 +365,7 @@ if __name__ == "__main__":
 
     # only for EVALUATIONs table_workflows and chart_complexity
     parser.add_argument("-l", "--llm",
-                        help="Which LLM to evaluates: g10p -> Gemini 1.0 Pro; g15p -> Gemini 1.5 Pro",
+                        help="Which LLM to evaluate?",
                         type=str,
                         choices=[constants.LLM_GEMINI_1_0_PRO,
                                  constants.LLM_GEMINI_1_5_PRO],
@@ -373,7 +373,7 @@ if __name__ == "__main__":
 
     # only for EVALUATION chart_complexity
     parser.add_argument("-m", "--metric",
-                        help="Metric to consider in the performance vs complexity chart",
+                        help="Metric to consider in the performance vs semantic map complexity chart.",
                         type=str,
                         choices=[constants.METRIC_TOP_1, constants.METRIC_TOP_2,
                                  constants.METRIC_TOP_3, constants.METRIC_TOP_ANY],
@@ -382,7 +382,7 @@ if __name__ == "__main__":
     # only for METHODs self_reflection and multiagent_reflection
     parser.add_argument("-i", "--reflection-iterations",
                         type=int,
-                        help="Number of reflection iterations",
+                        help="Number of reflection iterations in the Self-Reflection and Multi-Agent Reflection workflows.",
                         default=2)
 
     args = parser.parse_args()
