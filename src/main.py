@@ -528,7 +528,7 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="TODO")  # TODO
+        description="Uses one of the presented methods to perform object-centered planning for a set of queries on a set of semantic maps, using a specific LLM")
 
     parser.add_argument("-n", "--number-maps",
                         help="Number of semantic maps to be processed by the pipeline",
@@ -551,7 +551,7 @@ if __name__ == "__main__":
     # in METHOD ensembling represents the chooser LLM
     parser.add_argument("-l", "--llm",
                         type=str,
-                        help="Which LLM to use: 0 -> Gemini 1.0 Pro; 1 -> Gemini 1.5 Pro",
+                        help="Which LLM to use: g10p -> Gemini 1.0 Pro; g15p -> Gemini 1.5 Pro",
                         choices=[constants.LLM_GEMINI_1_0_PRO, constants.LLM_GEMINI_1_5_PRO])
 
     # (only for METHODs self_reflection and multiagent_reflection)
