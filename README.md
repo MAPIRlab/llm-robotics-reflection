@@ -4,7 +4,13 @@ This repository contains the code for the paper *"Agentic Workflows for Improvin
 
 ![Paper Title: Agentic Workflows for Improving LLM Reasoning in Robotic Object-Centered Planning](images/paper_title.png)
 
-## Paper Abstract
+## Article
+
+The article is currently under review in the MDPI Robotics Journal. Its preliminary (and not reviewed) version has been published in Preprints.org at [this link](https://www.preprints.org/manuscript/202501.0131).
+
+### Abstract
+
+The article abstract is the following
 
 Large Language Models (LLMs) provide cognitive capabilities that enable robots to interpret and reason about their workspace, especially when paired with semantically rich representations like semantic maps. However, these models are prone to generating inaccurate or invented responses, known as hallucinations, that can produce erratic robotic operation. This can be addressed by employing agentic workflows, structured processes that guide and refine the model's output to improve response quality. This work formally defines and qualitatively analyzes the impact of three agentic workflows (LLM Ensemble, Self-Reflection, and Multi-Agent Reflection) on enhancing the reasoning capabilities of an LLM guiding a robotic system to perform object-centered planning. In this context, the LLM is provided with a pre-built semantic map of the environment and a query, to which it must respond by determining the most relevant objects for the query. This response can be used in a multitude of downstream tasks. Extensive experiments were carried out employing state-of-the-art LLMs and semantic maps generated from the widely-used datasets ScanNet and SceneNN. Results show that agentic workflows significantly enhance object retrieval performance, especially in scenarios requiring complex reasoning, with improvements averaging up to 10% over the baseline.
 
@@ -85,11 +91,25 @@ The directory structure is as follows:
 
 ## Credentials
 
+As it is explained in the paper, the considered workflows have been implemented using LLMs from the Google Gemini family. Furthermore, in this repository we present the option of running the considered workflows using LLMs from the OpenIA family.
+For running these proprietary models, we need to properly configure their credentials.
+
 ### Google Gemini LLMs
 
-To be able to execute 
+The Google Vertex AI credentials should be placed in the `credentials` folder. Then, the `constants.py` file constants related to this model should be modified with the corresponding information, i.e., modifying the `GOOGLE_GEMINI_CREDENTIALS_FILENAME`, `GOOGLE_GEMINI_PROJECT_ID`, and `GOOGLE_GEMINI_PROJECT_LOCATION` constants.
+
+### OpenAI LLMs
+
+For using the OpenAI LLMs it is needed to create a `.env` file in the root directory of this repository, containing the environment variable `OPENAI_API_KEY`, which should include the OpenAI account API key.
 
 ## Main scripts
+
+This repository main scripts are the following:
+- `main.py`: executes each query on each semantic map, for every considered workflow.
+- `evaluate.py`: evaluates the results generated in the previous step, generating tables and charts presented in the paper.
+- `annotate.py`: GUI useful for generating the ground truth of annotated responses.
+
+The functioning of each script is the following:
 
 ### `main.py`
 
