@@ -132,3 +132,23 @@ This script opens a GUI useful for annotating the ground truth responses, for ea
 When executed, a screen like the following will open:
 
 ![GUI created for generating the ground truth](images/gui_screenshot.png)
+
+## Conclusions
+
+This study quantitatively evaluated the impact of agentic workflows in Large Language Models (LLMs) when performing object-centered planning in robotics. 
+In this context, an LLM uses a semantic map of the environment to respond to natural language queries with a list of objects that are ordered depending on their relevance to the query.
+We formalized and implemented three agentic workflows besides the baseline model: (1) Self-Reflection, where the LLM independently reviews and refines its responses, (2) Multi-Agent Reflection, involving multiple LLM-based agents generating responses, providing feedback, and collaborating, and (3) LLM Ensemble, which uses several LLMs to generate responses and then employs an evaluator LLM to select the most appropriate one.
+To evaluate these workflows, we introduced a publicly available dataset comprising semantic maps, natural language queries, and annotated responses. 
+The maps were generated from ScanNet and SceneNN datasets using the Voxeland framework, while the queries tested different reasoning types and complexities.
+
+Experiments show that reflection-based workflows, Self-Reflection and Multi-Agent Reflection, significantly improve response quality, achieving up to 12% and 10% improvements, respectively, on the ScanNet dataset. 
+These workflows are particularly effective for complex queries, while the LLM Ensemble workflow provides more modest gains. 
+Additionally, performance declines with increasing semantic map complexity, determined by the number of objects present in a scene and their semantic diversity.
+Larger maps tend to reduce performance due to increased prompt length and the problem of LLMs overlooking relevant information.
+An exhaustive analysis of cases in which the reflection-based workflows were outperformed by the baseline approach shows that reflection tends to over-reflect on some queries, including objects that may not be related to the task at hand.
+
+For future research, we plan to investigate the influence of additional object properties on the system's overall performance.
+A promising direction is studying how LLMs handle uncertainties in semantic maps, such as those arising from Voxeland's object classification.
+Additionally, we plan to evaluate LLMs' ability to handle ambiguous, incomplete, or noisy queries, and analyze their effect on retrieval accuracy.
+
+
